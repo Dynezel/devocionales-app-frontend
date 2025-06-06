@@ -1,0 +1,109 @@
+.amigos-container {
+    width: fit-content;
+    margin: 0 auto;
+    text-align: center;
+    margin-top: 2%;
+  }
+  
+  .amigos {
+    cursor: pointer;
+    position: relative;
+    font-weight: bold;
+    color: #28a745;
+  }
+  
+  .amigos:hover {
+    text-decoration: underline;
+  }
+  
+  .amigos-lista {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: rgb(54, 54, 54);
+    border: 1px solid #ccc;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    width: 300px;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  
+  .amigos-lista h3 {
+    margin: 0;
+    padding: 10px;
+    background-color: #343434;
+    border-bottom: 1px solid #ccc;
+    color: #fff;
+  }
+  
+  .amigos-lista ul {
+    margin: 0;
+    padding: 10px;
+  }
+  
+  .amigos-lista li {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    color: #fff;
+  }
+  
+  .amigos-lista li:hover {
+    background-color: #333333;
+    cursor: pointer;
+  }
+  
+  .amigos-lista img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+  }
+  
+  .placeholder-imagen {
+    width: 40px;
+    height: 40px;
+    background-color: #ccc;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 14px;
+  }
+  
+  .boton-amigos {
+    background: none;
+    border: none;
+    color: inherit;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    padding: 0;
+    cursor: pointer;
+  }
+  
+  .boton-amigos:hover {
+    background-color: transparent;
+  }
+  
+  .botones-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-top: 10px;
+  }
+  
+  .btn-enviar-solicitud {
+    background-color: rgb(65, 68, 250);
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  .btn-enviar-solicitud:hover {
+    background-color: #884821;
+  }
