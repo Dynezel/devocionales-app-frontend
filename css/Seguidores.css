@@ -1,0 +1,130 @@
+.seguidores-container {
+  width: fit-content;
+  margin: 0 auto; /* Centra el contenedor horizontalmente */
+  text-align: center; /* Centra el texto dentro del contenedor */
+  margin-top: 2%;
+}
+
+button.seguir {
+  background-color: #28a745; /* Color diferente para el botón de "Seguir" */
+}
+
+button.seguir:hover {
+  background-color: #884821;
+}
+
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+li {
+  padding: 5px;
+  border-bottom: 1px solid #ccc;
+}
+
+.seguidores-seguidos-container {
+  display: flex;
+  gap: 20px;
+  justify-content: center; /* Centra el contenido dentro del contenedor */
+  align-items: flex-start;
+  margin: 0 auto; /* Centra el contenedor dentro de su contenedor padre */
+}
+
+.seguidores, .seguidos {
+  cursor: pointer;
+  position: relative;
+}
+
+.seguidores:hover, .seguidos:hover {
+  text-decoration: underline;
+}
+
+.seguidores-lista, .seguidos-lista {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: rgb(54, 54, 54);
+  border: 1px solid #ccc;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  width: 300px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.seguidores-lista h3, .seguidos-lista h3 {
+  margin: 0;
+  padding: 10px;
+  background-color: #343434;
+  border-bottom: 1px solid #ccc;
+}
+
+.seguidores-lista ul, .seguidos-lista ul {
+  margin: 0;
+  padding: 10px;
+}
+
+.seguidores-lista li, .seguidos-lista li {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+}
+
+.seguidores-lista li:hover, .seguidos-lista li:hover {
+  background-color: #333333;
+  cursor: pointer;
+}
+
+.seguidores-lista img, .seguidos-lista img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 10px;
+}
+
+.placeholder-imagen {
+  width: 40px;
+  height: 40px;
+  background-color: #ccc;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.botones-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* O ajusta según la necesidad de alineación */
+  margin-top: 10px; /* Ajusta el margen superior si es necesario */
+}
+
+/* Estilo para el botón de seguir */
+.btn-seguir {
+  background-color: rgb(65, 68, 250);
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  display:flex;
+}
+
+/* Estilo para el botón de dejar de seguir */
+.btn-dejar-seguir {
+  background-color: red;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  /* Elimina márgenes específicos aquí */
+}
+
+.boton-seguidores-seguir {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  text-align:start;
+}

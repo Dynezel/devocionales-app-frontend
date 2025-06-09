@@ -1,0 +1,73 @@
+/* Estilo para el contenedor del devocional */
+.devocional-container {
+  border: 1px solid #ccc;
+  padding: 15px;
+  margin: 0 auto 15px;
+  border-radius: 8px;
+  text-align: center;
+  width: 100%; /* Ancho fijo */
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-sizing: border-box; /* Asegura que el padding y border se incluyan en el ancho */
+  overflow-y: scroll;
+}
+
+/* Estilo para el encabezado del devocional */
+.devocional-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center; /* Alinea el título y el botón verticalmente */
+  width: 100%; /* Asegura que el contenedor ocupe todo el ancho disponible */
+  box-sizing: border-box; /* Incluye padding y borde en el tamaño del elemento */
+  margin-bottom: 10px; /* Espacio entre el encabezado y el contenido */
+}
+
+/* Estilo para el contenedor del menú */
+.menu-container {
+  position: relative;
+  margin-left: -3.95%;
+}
+
+/* Estilo para el menú desplegable */
+.menu-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: rgb(42, 42, 42);
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 10px;
+  z-index: 1;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Ajustes para el botón de menú */
+.menu-button {
+  background-color: transparent;
+  border: none;
+  padding: 0; /* Elimina el padding del botón */
+  margin: 0; /* Elimina el margen del botón */
+  cursor: pointer;
+  display: inline-flex; /* Asegura que el botón se ajuste al contenido */
+  align-items: center; /* Centra el ícono verticalmente */
+  justify-content: center; /* Centra el ícono horizontalmente */
+  width: 20px; /* Establece el ancho del botón al tamaño del icono */
+  height: 35px; /* Establece la altura del botón al tamaño del icono */
+}
+
+.menu-button i {
+  font-size: 20px; /* Tamaño del icono */
+  line-height: 1; /* Asegura que no haya espacio adicional */
+  pointer-events: none; /* Desactiva eventos en el ícono para que solo el botón sea clickeable */
+}
+
+.edit-button {
+  width: 100%;
+}
+
+/* Estilo para el título */
+.titulo-devocional {
+  flex: 1; /* Permite que el título ocupe el espacio disponible dentro del encabezado */
+  text-align: center; /* Centra el texto dentro del título */
+}

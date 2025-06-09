@@ -1,0 +1,77 @@
+.versiculos-container {
+    width: calc(100%); /* Ancho ajustado para los versículos */
+    overflow-y: scroll;
+    max-height: 70vh;
+    min-width: 40%;
+    max-width: 100%;
+    padding-right: 5%;
+    border-left: 3% solid white;
+  }
+   
+  .book-selector {
+    position: relative;
+  }
+  
+  .book-selector input[type="text"] {
+    width: 100%;
+    padding: 8px 30px 8px 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  .book-selector select {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 30%;
+    border: none;
+    background-color: transparent;
+    color: #333;
+    font-size: 16px;
+    padding: 8px;
+    appearance: none;
+  }
+  select {
+    background-color: #5f5f5f;
+  }
+/* Colores Claros */
+@media (prefers-color-scheme: light) {
+  .versiculos-container {
+    width: calc(100%); /* Ancho ajustado para los versículos */
+    overflow-y: scroll;
+    max-height: 85vh;
+    padding-right: 5%;
+  }
+   
+  .book-selector {
+    position: relative;
+  }
+  
+  .book-selector input[type="text"] {
+    width: 100%;
+    padding: 8px 30px 8px 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  .book-selector select {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 30%;
+    border: none;
+    background-color: transparent;
+    color: #000000;
+    font-size: 16px;
+    padding: 8px;
+    appearance: none;
+  }
+  select {
+    background-color: #f1f1f1;
+  }
+}
+
