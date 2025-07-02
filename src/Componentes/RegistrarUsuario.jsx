@@ -19,7 +19,7 @@ export default function RegistrarUsuario() {
 
     try {
       // Validar campos obligatorios y contraseñas coincidentes
-      if (!nombre || !email || !contrasenia || !celular) {
+      if (!nombre || !email || !contrasenia) {
         setError("Por favor, completa todos los campos.");
         return;
       }
@@ -49,12 +49,8 @@ export default function RegistrarUsuario() {
     try {
       const response = await axios.post(
         "http://localhost:8080/usuario/registro",
-        formData, // Usamos formData en lugar de un objeto plano
-        {
-          headers: {
-            "Content-Type": "multipart/form-data", // Asegúrate de establecer el tipo de contenido como "multipart/form-data"
-          },
-        }
+        formData // Usamos formData en lugar de un objeto plano
+        
       );
       console.log("Se ha registrado con exito al usuario", response.data);
       if (response.status === 200) {
@@ -76,7 +72,7 @@ export default function RegistrarUsuario() {
   return (
     <form className="formularioRegistro" onSubmit={handleSignUp} encType="multipart/form-data">
       {error && <div className="error-message">{error}</div>}
-      <div class="form-group">
+      <div className="form-group">
         <label htmlFor="nombre">Nombre:</label>
         <input
           type="text"
@@ -86,7 +82,7 @@ export default function RegistrarUsuario() {
           required
         />
       </div>
-      <div class="form-group">
+      <div className="form-group">
         <label htmlFor="email">Correo Electrónico:</label>
         <input
           type="email"
@@ -96,7 +92,7 @@ export default function RegistrarUsuario() {
           required
         />
       </div>
-      <div class="form-group">
+      <div className="form-group">
         <label htmlFor="nombreUsuario">Nombre de Usuario (Ejemplo: <br/>@NombreOriginal23):</label>
         <input
           type="nombreUsuario"
@@ -106,7 +102,7 @@ export default function RegistrarUsuario() {
           required
         />
       </div>
-      <div class="form-group">
+      <div className="form-group">
         <label htmlFor="celular">Número de Teléfono:</label>
         <input
           type="tel"
@@ -116,7 +112,7 @@ export default function RegistrarUsuario() {
           required
         />
       </div>
-      <div class="form-group">
+      <div className="form-group">
         <label htmlFor="contrasenia">Contraseña:</label>
         <input
           type="password"
@@ -126,7 +122,7 @@ export default function RegistrarUsuario() {
           required
         />
       </div>
-      <div class="form-group">
+      <div className="form-group">
         <label htmlFor="contrasenia2">Confirmar Contraseña:</label>
         <input
           type="password"
@@ -136,7 +132,7 @@ export default function RegistrarUsuario() {
           required
         />
       </div>
-      <div class="form-group">
+      <div className="form-group">
         <label htmlFor="archivo">Imagen de Perfil:</label>
         <input
           type="file"
