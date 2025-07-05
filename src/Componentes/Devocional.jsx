@@ -236,7 +236,7 @@ export default function Devocional() {
         </h2>
 
         {user &&
-          (user.idUsuario === autor.idUsuario ||
+          (user.idUsuario ===  autorId ||
             user.rol === "ADMINISTRADOR") && (
             <div className="menu-container">
               <button className="menu-button" onClick={toggleMenu}>

@@ -4,6 +4,7 @@ import NotificationBell from '../Images/Notification_Bell_2-transformed.png';
 import '../css/NotificationDropdown.css';
 import MensajeriaPopup from './Mensajeria';
 import { useNavigate } from 'react-router-dom';
+import defaultImage from '../Images/default-image-profile.jpg';
 
 const NotificationDropdown = ({ user }) => {
   const [notifications, setNotifications] = useState([]);
@@ -27,7 +28,7 @@ const NotificationDropdown = ({ user }) => {
               );
               return { ...notification, imagenEmisor: `data:image/jpeg;base64,${base64Image}` };
             } catch {
-              return { ...notification, imagenEmisor: 'path/to/default-image.jpg' };
+              return { ...notification, imagenEmisor: defaultImage  };
             }
           })
         );

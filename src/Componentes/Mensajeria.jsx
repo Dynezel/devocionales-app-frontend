@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import SockJS from "sockjs-client";
+import { Client } from "@stomp/stompjs";
+import defaultImage from '../Images/default-image-profile.jpg';
+
 import "../css/Mensajeria.css";
 
 // Función para formatear la fecha de envío
@@ -14,7 +18,7 @@ const formatFechaEnvio = (fechaEnvio) => {
   };
 };
 
-export default function MensajeriaPopup({ usuarioId, usuarioActualId, onClose }) {
+export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
   const [conversacion, setConversacion] = useState([]);
   const [nuevoMensaje, setNuevoMensaje] = useState("");
   const [minimizado, setMinimizado] = useState(false);
@@ -25,22 +29,54 @@ export default function MensajeriaPopup({ usuarioId, usuarioActualId, onClose })
   const mensajesEndRef = useRef(null); // Nueva referencia para el último mensaje
   const [dragging, setDragging] = useState(false); // Estado para controlar el arrastre
   const [offset, setOffset] = useState({ x: 0, y: 0 }); // Estado para almacenar el desplazamiento inicial
+  const stompClientRef = useRef(null);
+
+  useEffect(() => {
+    const socket = new SockJS("http://localhost:8080/ws-notifications");
+    const stompClient = new Client({
+      webSocketFactory: () => socket,
+      reconnectDelay: 5000,
+      onConnect: () => {
+        console.log("WebSocket conectado");
+  
+        stompClient.subscribe(`/user/queue/messages`, (message) => {
+          const nuevo = JSON.parse(message.body);
+          // Solo mostrar si el mensaje es para esta conversación
+          if (
+            (nuevo.emisor.idUsuario === usuarioId &&
+             nuevo.receptor.idUsuario === usuarioActualId) ||
+            (nuevo.emisor.idUsuario === usuarioActualId &&
+             nuevo.receptor.idUsuario === usuarioId)
+          ) {
+            setConversacion((prev) => [...prev, nuevo]);
+          }
+        });
+      },
+      onStompError: (frame) => {
+        console.error("Error en STOMP:", frame);
+      },
+    });
+  
+    stompClient.activate();
+    stompClientRef.current = stompClient;
+  
+    return () => {
+      stompClient.deactivate();
+    };
+  }, [usuarioId, usuarioActualId]);
 
   useEffect(() => {
     const obtenerConversacion = async () => {
       try {
-        const response = await axios.get(
-          "http://localhost:8080/mensajes/conversacion",
-          {
-            params: {
-              emisorId: usuarioActualId,
-              receptorId: usuarioId,
-            },
-          }
-        );
+        const response = await axios.get("http://localhost:8080/mensajes/conversacion", {
+          params: {
+            emisorId: usuarioActualId,
+            receptorId: usuarioId,
+          },
+        });
         setConversacion(response.data);
       } catch (error) {
-        console.error("Error al obtener la conversacion:", error);
+        console.error("Error al obtener la conversación:", error);
       }
     };
 
@@ -81,21 +117,21 @@ export default function MensajeriaPopup({ usuarioId, usuarioActualId, onClose })
     }
   }, [conversacion, minimizado]); // Ejecuta el scroll cuando cambia la conversación o se maximiza la ventana
 
-  const enviarMensaje = async () => {
+  const enviarMensaje = () => {
     if (nuevoMensaje.trim() === "") return;
-    try {
-      const response = await axios.post(
-        "http://localhost:8080/mensajes/enviar",
-        {
-          emisorId: usuarioActualId,
-          receptorId: usuarioId,
-          contenido: nuevoMensaje,
-        }
-      );
-      setConversacion([...conversacion, response.data]);
+    const mensaje = {
+      emisorId: usuarioActualId,
+      receptorId: usuarioId,
+      contenido: nuevoMensaje,
+    };
+    if (stompClientRef.current && stompClientRef.current.connected) {
+      stompClientRef.current.publish({
+        destination: "/app/chat.send",
+        body: JSON.stringify(mensaje),
+      });
       setNuevoMensaje("");
-    } catch (error) {
-      console.error("Error al enviar el mensaje:", error);
+    } else {
+      console.error("STOMP no está conectado");
     }
   };
 
@@ -149,7 +185,7 @@ export default function MensajeriaPopup({ usuarioId, usuarioActualId, onClose })
         const { innerWidth, innerHeight } = window;
         const { clientWidth, clientHeight } = popupRef.current;
         popupRef.current.style.left = `${innerWidth - clientWidth - 17}px`;
-        popupRef.current.style.top = `${innerHeight - clientHeight - 15}px`;
+        popupRef.current.style.top = `${innerHeight - clientHeight - 60}px`;
       }
     };
     ajustarPosicionInicial();
@@ -202,7 +238,7 @@ export default function MensajeriaPopup({ usuarioId, usuarioActualId, onClose })
                           {mensaje.contenido}
                         </div>
                         <img
-                          src={imagenPerfilUsuario}
+                          src={imagenPerfilUsuario || defaultImage}
                           alt="Tu Imagen de Perfil"
                           className="profile-picture profile-picture-usuario"
                         />

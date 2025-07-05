@@ -10,6 +10,7 @@ import MensajeriaPopup from "./Mensajeria";
 import bannerDefault from "../Images/banner-default.png";
 import ConfiguracionUsuario from "./ConfiguracionUsuario"; // Importar el componente de configuración
 import Amigos from "./Amigos";
+import defaultImage from '../Images/default-image-profile.jpg';
 
 export default function PerfilUsuario() {
   const { idUsuario } = useParams(); // Captura el idUsuario desde la URL
@@ -92,6 +93,7 @@ export default function PerfilUsuario() {
       setImagenPerfil(url);
     } catch (error) {
       console.error("Error al cargar la imagen de perfil:", error);
+      setImagenPerfil(defaultImage)
     }
   };
 
@@ -109,13 +111,11 @@ export default function PerfilUsuario() {
             </div>
             <div className="perfil-info">
               <div className="perfil-main">
-                {imagenPerfil && (
                   <img
                     className="profile-picture"
-                    src={imagenPerfil}
+                    src={imagenPerfil || defaultImage}
                     alt="Imagen de Perfil"
                   />
-                )}
                 <div className="perfil-details">
                   <h2 className="perfil-nombre">{user.nombre}</h2>
                   <h4 className="perfil-username">@{user.nombreUsuario}</h4>

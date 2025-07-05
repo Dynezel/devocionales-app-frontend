@@ -34,6 +34,7 @@
   height: 40px; /* Ajusta el tamaño según lo necesites */
   border-radius: 50%;
   margin-right: 10px; /* Añade espacio entre la imagen y el texto del comentario */
+  background-color: #b3b3b3;
 }
 
 .comentario-texto {

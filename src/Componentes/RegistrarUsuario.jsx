@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
-import imageDefault from '../Images/default-image-profile.png'
+import imageDefault from '../Images/default-image-profile.jpg'
 import bannerDefault from "../Images/banner-default.png";
 
 export default function RegistrarUsuario() {
@@ -28,16 +28,10 @@ export default function RegistrarUsuario() {
         setError("Las contraseñas no coinciden.");
         return;
       }
-      if (!archivo){
-        setArchivo({imageDefault})
-      }
-      if (!banner) {
-        setBanner({bannerDefault})
-      }
 
       const formData = new FormData();
-      formData.append("archivo", archivo);
-      formData.append("banner", banner);
+      if (archivo) formData.append("archivo", archivo);
+      if (banner) formData.append("banner", banner);
       formData.append("nombre", nombre);
       formData.append("email", email);
       formData.append("nombreUsuario", nombreUsuario);
@@ -46,27 +40,27 @@ export default function RegistrarUsuario() {
       formData.append("contrasenia2", contrasenia2);
 
       // Enviar solicitud POST al backend para registrar el usuario
-    try {
-      const response = await axios.post(
-        "http://localhost:8080/usuario/registro",
-        formData // Usamos formData en lugar de un objeto plano
-        
-      );
-      console.log("Se ha registrado con exito al usuario", response.data);
-      if (response.status === 200) {
-        // Redirigir a la página principal
-        window.location.href = '/login';
+      try {
+        const response = await axios.post(
+          "http://localhost:8080/usuario/registro",
+          formData, // Usamos formData en lugar de un objeto plano
+
+        );
+        console.log("Se ha registrado con exito al usuario", response.data);
+        if (response.status === 200) {
+          // Redirigir a la página principal
+          window.location.href = '/login';
+        }
       }
-    }
-     catch (error) {
-      console.error("Error al registrar usuario:", error);
+      catch (error) {
+        console.error("Error al registrar usuario:", error);
+        setError("Error al registrar usuario. Por favor, intenta nuevamente.");
+      }
+    } catch (error) {
+      console.error("Error al registrar usuario numero 2:", error);
       setError("Error al registrar usuario. Por favor, intenta nuevamente.");
-    }
-  } catch (error) {
-    console.error("Error al registrar usuario numero 2:", error);
-    setError("Error al registrar usuario. Por favor, intenta nuevamente.");
-  };
-}
+    };
+  }
 
 
   return (
@@ -93,7 +87,7 @@ export default function RegistrarUsuario() {
         />
       </div>
       <div className="form-group">
-        <label htmlFor="nombreUsuario">Nombre de Usuario (Ejemplo: <br/>@NombreOriginal23):</label>
+        <label htmlFor="nombreUsuario">Nombre de Usuario (Ejemplo: <br />@NombreOriginal23):</label>
         <input
           type="nombreUsuario"
           id="nombreUsuario"
@@ -138,7 +132,6 @@ export default function RegistrarUsuario() {
           type="file"
           id="archivo"
           onChange={(e) => setArchivo(e.target.files[0])} // Capturamos el archivo seleccionado
-          required
         />
       </div>
       <div className="form-group">

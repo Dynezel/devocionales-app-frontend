@@ -4,13 +4,14 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import ChatDropdown from "./ChatDropdown";
 import NotificationDropdown from "./NotificationDropdown";
-import iconoChat from '../Images/chat-icon3.png'; 
+import iconoChat from '../Images/chat-icon3.png';
+import defaultImage from '../Images/default-image-profile.jpg';
 
 export default function NavBar({ handleConversacionClick }) {
   const [user, setUser] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [hamburgerOpen, setHamburgerOpen] = useState(false);
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth); 
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -57,6 +58,10 @@ export default function NavBar({ handleConversacionClick }) {
               src={`http://localhost:8080/imagen/perfil/${user.idUsuario}`}
               alt="Foto de perfil"
               className="profile-image"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = defaultImage;
+              }}
             />
             {menuOpen && (
               <div className="user-menu">
@@ -86,6 +91,10 @@ export default function NavBar({ handleConversacionClick }) {
                     src={`http://localhost:8080/imagen/perfil/${user.idUsuario}`}
                     alt="Foto de perfil"
                     className="profile-image"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = defaultImage;
+                    }}
                   />
                   {menuOpen && (
                     <div className="user-menu">

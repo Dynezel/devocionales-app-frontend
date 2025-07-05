@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import "../css/Comentarios.css"; // Importa los estilos CSS
 import { useNavigate } from 'react-router-dom';
+import defaultImage from '../Images/default-image-profile.jpg';
 
 export default function Comentarios({ devocionalId, usuarioId }) {
   const [comentarios, setComentarios] = useState([]);
@@ -182,10 +183,14 @@ export default function Comentarios({ devocionalId, usuarioId }) {
             <li key={comentario.id} className="comentario-item">
               {comentario.usuario.idUsuario && (
                 <img
-                  className="imagenComentario"
-                  src={`http://localhost:8080/imagen/perfil/${comentario.usuario.idUsuario}`}
-                  alt="Imagen de perfil"
-                />
+                    src={`http://localhost:8080/imagen/perfil/${user.idUsuario}`}
+                    alt="Foto de perfil"
+                    className="imagenComentario"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = defaultImage;
+                    }}
+                  />
               )}
               <div className="comentario-texto">
                 <strong className="comentario-usuario">

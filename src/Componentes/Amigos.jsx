@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
+import defaultImage from '../Images/default-image-profile.jpg';
 import '../css/Amigos.css';
 
 export default function Amigos({ usuarioId, usuarioActualId }) {
@@ -82,14 +83,14 @@ export default function Amigos({ usuarioId, usuarioActualId }) {
                   <li key={amigoAMostrar.idUsuario}>
                     <Link to={`/usuario/perfil/${amigoAMostrar.idUsuario}`}>
                       <button className="boton-amigos">
-                        {amigoAMostrar.fotoPerfil ? (
-                          <img
-                            src={`http://localhost:8080/imagen/perfil/${amigoAMostrar.idUsuario}`}
-                            alt="Perfil"
-                          />
-                        ) : (
-                          <div className="placeholder-imagen">P</div>
-                        )}
+                        <img
+                          src={`http://localhost:8080/imagen/perfil/${amigoAMostrar.idUsuario}`}
+                          alt="Perfil"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = defaultImage;
+                          }}
+                        />
                         {amigoAMostrar.nombre}
                       </button>
                     </Link>

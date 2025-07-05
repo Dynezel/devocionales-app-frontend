@@ -8,6 +8,7 @@ import "../css/PerfilUsuario.css";
 import bannerDefault from "../Images/banner-default.png";
 import ConfiguracionUsuario from "./ConfiguracionUsuario";
 import Amigos from "./Amigos";
+import defaultImage from '../Images/default-image-profile.jpg';
 
 export default function Perfil() {
   const [user, setUser] = useState(null);
@@ -57,6 +58,7 @@ export default function Perfil() {
       setImagenPerfil(url);
     } catch (error) {
       console.error("Error al cargar la imagen de perfil:", error);
+      setImagenPerfil(defaultImage)
     }
   };
 
@@ -90,13 +92,11 @@ export default function Perfil() {
             </div>
             <div className="perfil-info">
               <div className="perfil-main">
-                {imagenPerfil && (
                   <img
                     className="profile-picture"
-                    src={imagenPerfil}
+                    src={imagenPerfil || defaultImage}
                     alt="Imagen de Perfil"
                   />
-                )}
                 <div className="perfil-details">
                   <h2 className="perfil-nombre">{user.nombre}</h2>
                   <h4 className="perfil-username">@{user.nombreUsuario}</h4>

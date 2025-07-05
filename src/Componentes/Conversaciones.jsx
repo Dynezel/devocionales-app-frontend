@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
 import '../css/Conversaciones.css';
-import MensajeriaPopup from './Mensajeria';
+import Mensajeria from './Mensajeria';
 
 export default function Conversaciones() {
   const { usuarioActualId } = useParams();
@@ -41,7 +41,7 @@ export default function Conversaciones() {
               Conversar con {usuario.nombre}
             </button>
             {mostrarMensajeriaPara === usuario.idUsuario && (
-              <MensajeriaPopup
+              <Mensajeria
                 usuarioId={usuario.idUsuario}
                 usuarioActualId={usuarioActualId}
                 onClose={cerrarMensajeria}

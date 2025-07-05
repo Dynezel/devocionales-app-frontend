@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import axios from 'axios';
 import iconoChat from '../Images/chat-icon3.png'; // Reemplaza con tu ruta real al icono de chat
 import '../css/ChatDropdown.css'; // Estilo para el dropdown
-import MensajeriaPopup from './Mensajeria';
+import Mensajeria from './Mensajeria';
 
 const ChatDropdown = ({ user }) => {
   const [conversaciones, setConversaciones] = useState([]);
@@ -55,7 +55,7 @@ const ChatDropdown = ({ user }) => {
         </ul>
       </div>
       {conversacionActiva && (
-        <MensajeriaPopup
+        <Mensajeria
           usuarioId={conversacionActiva}
           usuarioActualId={user.idUsuario}
           onClose={() => setConversacionActiva(null)}
