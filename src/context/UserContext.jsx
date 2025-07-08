@@ -10,7 +10,7 @@ export const UserProvider = ({ children }) => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await axios.get("http://localhost:8080/usuario/perfil", { withCredentials: true });
+        const response = await axios.get("https://localhost:8080/usuario/perfil", { withCredentials: true });
         setUser(response.data);
       } catch (error) {
         console.error("Error fetching user", error);
@@ -21,7 +21,7 @@ export const UserProvider = ({ children }) => {
 
     const sessionInterval = setInterval(async () => {
       try {
-        const response = await axios.get("http://localhost:8080/api/session-status", { withCredentials: true });
+        const response = await axios.get("https://localhost:8080/api/session-status", { withCredentials: true });
         if (response.data.status === "unauthenticated" || (response.data.status === "active" && !response.data.active)) {
           setSessionExpired(true);
         } else {

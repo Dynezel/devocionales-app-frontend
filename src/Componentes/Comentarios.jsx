@@ -18,7 +18,7 @@ export default function Comentarios({ devocionalId, usuarioId }) {
     const fetchUser = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:8080/usuario/perfil",
+          "https://localhost:8080/usuario/perfil",
           { withCredentials: true }
         );
         setUser(response.data);
@@ -34,7 +34,7 @@ export default function Comentarios({ devocionalId, usuarioId }) {
     const fetchComentarios = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:8080/devocionales/${devocionalId}/comentarios`,
+          `https://localhost:8080/devocionales/${devocionalId}/comentarios`,
           {
             params: { usuarioId },
           }
@@ -43,7 +43,7 @@ export default function Comentarios({ devocionalId, usuarioId }) {
         const comentariosConUsuario = await Promise.all(
           response.data.map(async (comentario) => {
             const usuarioResponse = await axios.get(
-              `http://localhost:8080/usuario/perfil/${comentario.idUsuario}`
+              `https://localhost:8080/usuario/perfil/${comentario.idUsuario}`
             );
             comentario.usuario = usuarioResponse.data;
             return comentario;
@@ -70,7 +70,7 @@ export default function Comentarios({ devocionalId, usuarioId }) {
       }
   
       const response = await axios.post(
-        `http://localhost:8080/devocionales/${devocionalId}/comentarios?usuarioId=${usuarioId}`,
+        `https://localhost:8080/devocionales/${devocionalId}/comentarios?usuarioId=${usuarioId}`,
         {
           texto: nuevoComentario,
         },
@@ -92,7 +92,7 @@ export default function Comentarios({ devocionalId, usuarioId }) {
 
   const handleEliminarComentario = async (comentarioId) => {
     try {
-      await axios.delete(`http://localhost:8080/comentarios/${comentarioId}`, {
+      await axios.delete(`https://localhost:8080/comentarios/${comentarioId}`, {
         withCredentials: true,
       });
       setComentarios(
@@ -116,7 +116,7 @@ export default function Comentarios({ devocionalId, usuarioId }) {
   const handleGuardarEdicion = async (comentarioId) => {
     try {
       await axios.put(
-        `http://localhost:8080/comentarios/${comentarioId}`,
+        `https://localhost:8080/comentarios/${comentarioId}`,
         {
           texto: textoEditado,
         },
@@ -183,7 +183,7 @@ export default function Comentarios({ devocionalId, usuarioId }) {
             <li key={comentario.id} className="comentario-item">
               {comentario.usuario.idUsuario && (
                 <img
-                    src={`http://localhost:8080/imagen/perfil/${user.idUsuario}`}
+                    src={`https://localhost:8080/imagen/perfil/${user.idUsuario}`}
                     alt="Foto de perfil"
                     className="imagenComentario"
                     onError={(e) => {

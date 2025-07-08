@@ -1,8 +1,8 @@
 import axios from 'axios';
 
-const URL1 = "http://localhost:8080/devocionales"
-const URL2 = "http://localhost:8080/devocionalesPorUsuario"
-const URL3 = "http://localhost:8080/usuario"
+const URL1 = "https://localhost:8080/devocionales"
+const URL2 = "https://localhost:8080/devocionalesPorUsuario"
+const URL3 = "https://localhost:8080/usuario"
 
 export const conseguirDatos = async () => {
     //Respuesta de los datos de la url

@@ -44,7 +44,7 @@ export default function PerfilUsuario() {
     const fetchUsuario = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:8080/usuario/perfil",
+          "https://localhost:8080/usuario/perfil",
           { withCredentials: true }
         );
         setUsuario(response.data);
@@ -62,7 +62,7 @@ export default function PerfilUsuario() {
     const fetchUser = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:8080/usuario/perfil/${idUsuario}`
+          `https://localhost:8080/usuario/perfil/${idUsuario}`
         );
         setUser(response.data);
 
@@ -83,7 +83,7 @@ export default function PerfilUsuario() {
   const cargarImagenPerfil = async (idUsuario) => {
     try {
       const response = await axios.get(
-        `http://localhost:8080/imagen/perfil/${idUsuario}`,
+        `https://localhost:8080/imagen/perfil/${idUsuario}`,
         {
           responseType: "arraybuffer",
         }

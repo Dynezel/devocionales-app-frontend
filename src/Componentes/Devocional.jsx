@@ -25,7 +25,7 @@ export default function Devocional() {
     const fetchUser = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:8080/usuario/perfil",
+          "https://localhost:8080/usuario/perfil",
           { withCredentials: true }
         );
         setUser(response.data);
@@ -42,7 +42,7 @@ export default function Devocional() {
       const obtenerDevocional = async () => {
         try {
           const response = await axios.get(
-            `http://localhost:8080/encontrar/${id}`
+            `https://localhost:8080/encontrar/${id}`
           );
           setDevocional(response.data);
         } catch (error) {
@@ -59,7 +59,7 @@ export default function Devocional() {
       const obtenerAutor = async () => {
         try {
           const response = await axios.get(
-            `http://localhost:8080/usuario/perfil/${autorId}`
+            `https://localhost:8080/usuario/perfil/${autorId}`
           );
           setAutor(response.data);
         } catch (error) {
@@ -79,7 +79,7 @@ export default function Devocional() {
 
       try {
         const response = await axios.get(
-          `http://localhost:8080/devocionales/${devocional.id}/megusta`
+          `https://localhost:8080/devocionales/${devocional.id}/megusta`
         );
         const likesData = response.data;
         const userLiked = user
@@ -111,7 +111,7 @@ export default function Devocional() {
 
   const incrementarVistas = async (id) => {
     try {
-      await axios.post(`http://localhost:8080/${id}/vistas`);
+      await axios.post(`https://localhost:8080/${id}/vistas`);
     } catch (error) {
       console.error("Error al incrementar vistas:", error);
     }
@@ -125,7 +125,7 @@ export default function Devocional() {
   
     try {
       const response = await axios.post(
-        `http://localhost:8080/devocionales/${devocionalId}/megusta`,
+        `https://localhost:8080/devocionales/${devocionalId}/megusta`,
         null,
         {
           params: {
@@ -169,13 +169,13 @@ export default function Devocional() {
       try {
         // Elimina todos los comentarios asociados al devocional antes de eliminar el devocional
         await axios.delete(
-          `http://localhost:8080/devocionales/${devocional.id}/comentarios`,
+          `https://localhost:8080/devocionales/${devocional.id}/comentarios`,
           {
             withCredentials: true,
           }
         );
 
-        await axios.delete(`http://localhost:8080/eliminar/${devocional.id}`, {
+        await axios.delete(`https://localhost:8080/eliminar/${devocional.id}`, {
           withCredentials: true,
         });
 

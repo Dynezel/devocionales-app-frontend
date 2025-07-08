@@ -15,7 +15,7 @@ export default function Amigos({ usuarioId, usuarioActualId }) {
   const obtenerAmigos = async () => {
     try {
       const response = await axios.get(
-        `http://localhost:8080/amistades/${usuarioId}/amigos`
+        `https://localhost:8080/amistades/${usuarioId}/amigos`
       );
       setAmigos(response.data);
 
@@ -42,7 +42,7 @@ export default function Amigos({ usuarioId, usuarioActualId }) {
 
     try {
       await axios.post(
-        `http://localhost:8080/amistades/${usuarioActualId}/enviar-solicitud/${usuarioId}`
+        `https://localhost:8080/amistades/${usuarioActualId}/enviar-solicitud/${usuarioId}`
       );
       setSolicitudEnviada(true);
       obtenerAmigos(); // Refresca la lista de amigos al enviar la solicitud
@@ -84,7 +84,7 @@ export default function Amigos({ usuarioId, usuarioActualId }) {
                     <Link to={`/usuario/perfil/${amigoAMostrar.idUsuario}`}>
                       <button className="boton-amigos">
                         <img
-                          src={`http://localhost:8080/imagen/perfil/${amigoAMostrar.idUsuario}`}
+                          src={`https://localhost:8080/imagen/perfil/${amigoAMostrar.idUsuario}`}
                           alt="Perfil"
                           onError={(e) => {
                             e.target.onerror = null;

@@ -13,7 +13,7 @@ export default function Conversaciones() {
   useEffect(() => {
     const obtenerConversaciones = async () => {
       try {
-        const response = await axios.get(`http://localhost:8080/mensajes/conversaciones/${usuarioActualId}`);
+        const response = await axios.get(`https://localhost:8080/mensajes/conversaciones/${usuarioActualId}`);
         setConversaciones(response.data);
       } catch (error) {
         console.error('Error al obtener las conversaciones:', error);

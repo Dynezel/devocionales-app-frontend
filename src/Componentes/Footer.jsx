@@ -15,7 +15,7 @@ export default function Footer() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await axios.get("http://localhost:8080/usuario/perfil", { withCredentials: true });
+        const response = await axios.get("https://localhost:8080/usuario/perfil", { withCredentials: true });
         setUser(response.data);
       } catch (error) {
         console.error("Error fetching user", error);

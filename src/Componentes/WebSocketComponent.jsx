@@ -4,7 +4,7 @@ import SockJS from 'sockjs-client';
 
 export default function WebSocketComponent({ usuarioId, onNewNotification }) {
   useEffect(() => {
-    const socket = new SockJS('http://localhost:8080/ws-notifications');
+    const socket = new SockJS('https://localhost:8080/ws-notifications');
     const stompClient = Stomp.over(socket);
 
     stompClient.connect({}, (frame) => {

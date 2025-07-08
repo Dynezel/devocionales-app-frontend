@@ -30,8 +30,8 @@ export default function Devocionales() {
     const obtenerDatos = async () => {
       try {
         const [responseUsuarios, responseUser] = await Promise.all([
-          axios.get("http://localhost:8080/usuario/lista"),
-          axios.get("http://localhost:8080/usuario/perfil", {
+          axios.get("https://localhost:8080/usuario/lista"),
+          axios.get("https://localhost:8080/usuario/perfil", {
             withCredentials: true,
           }),
         ]);
@@ -52,7 +52,7 @@ export default function Devocionales() {
           setResultadosBusqueda(devocionales);
         } else {
           const response = await axios.get(
-            "http://localhost:8080/devocionales/buscar",
+            "https://localhost:8080/devocionales/buscar",
             { params: { nombre: filtroTitulo } }
           );
           setResultadosBusqueda(response.data);
@@ -90,7 +90,7 @@ export default function Devocionales() {
 
   const incrementarVistas = async (id) => {
     try {
-      await axios.post(`http://localhost:8080/${id}/vistas`);
+      await axios.post(`https://localhost:8080/${id}/vistas`);
     } catch (error) {
       console.error("Error al incrementar vistas:", error);
     }
@@ -104,7 +104,7 @@ export default function Devocionales() {
 
     try {
       const response = await axios.get(
-        `http://localhost:8080/devocionales/${id}/megusta`
+        `https://localhost:8080/devocionales/${id}/megusta`
       );
       const likesData = response.data;
       const userLiked = likesData.some(
@@ -132,7 +132,7 @@ export default function Devocionales() {
 
     try {
       const response = await axios.post(
-        `http://localhost:8080/devocionales/${devocionalId}/megusta`,
+        `https://localhost:8080/devocionales/${devocionalId}/megusta`,
         null,
         { params: { usuarioId: user.idUsuario } }
       );

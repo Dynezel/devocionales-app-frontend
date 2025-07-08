@@ -32,7 +32,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
   const stompClientRef = useRef(null);
 
   useEffect(() => {
-    const socket = new SockJS("http://localhost:8080/ws-notifications");
+    const socket = new SockJS("https://localhost:8080/ws-notifications");
     const stompClient = new Client({
       webSocketFactory: () => socket,
       reconnectDelay: 5000,
@@ -68,7 +68,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
   useEffect(() => {
     const obtenerConversacion = async () => {
       try {
-        const response = await axios.get("http://localhost:8080/mensajes/conversacion", {
+        const response = await axios.get("https://localhost:8080/mensajes/conversacion", {
           params: {
             emisorId: usuarioActualId,
             receptorId: usuarioId,
@@ -83,7 +83,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
     const obtenerNombreUsuario = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:8080/usuario/perfil/${usuarioId}`
+          `https://localhost:8080/usuario/perfil/${usuarioId}`
         );
         setNombreUsuario(response.data.nombre);
       } catch (error) {
@@ -94,7 +94,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
     const cargarImagenPerfil = async (idUsuario, setImagenPerfil) => {
       try {
         const response = await axios.get(
-          `http://localhost:8080/imagen/perfil/${idUsuario}`,
+          `https://localhost:8080/imagen/perfil/${idUsuario}`,
           { responseType: "arraybuffer" }
         );
         const blob = new Blob([response.data], { type: "image/jpeg" });

@@ -14,7 +14,7 @@ export default function ModificarDevocional() {
   useEffect(() => {
     const obtenerDevocional = async () => {
       try {
-        const response = await axios.get(`http://localhost:8080/encontrar/${id}`);
+        const response = await axios.get(`https://localhost:8080/encontrar/${id}`);
         const { nombre, descripcion } = response.data;
         setNombre(nombre);
         setDescripcion(descripcion);
@@ -29,7 +29,7 @@ export default function ModificarDevocional() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const URL = `http://localhost:8080/modificar/${id}`;
+    const URL = `https://localhost:8080/modificar/${id}`;
 
     try {
       const response = await axios.put(URL, {

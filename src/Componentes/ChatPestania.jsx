@@ -9,7 +9,7 @@ export default function ChatPestania({ usuarioActualId, usuarioDestinoId, nombre
   useEffect(() => {
     const obtenerMensajes = async () => {
       try {
-        const response = await axios.get(`http://localhost:8080/mensajes/conversacion/${usuarioActualId}/${usuarioDestinoId}`);
+        const response = await axios.get(`https://localhost:8080/mensajes/conversacion/${usuarioActualId}/${usuarioDestinoId}`);
         setMensajes(response.data);
       } catch (error) {
         console.error("Error al obtener los mensajes:", error);
@@ -22,7 +22,7 @@ export default function ChatPestania({ usuarioActualId, usuarioDestinoId, nombre
   const enviarMensaje = async () => {
     if (nuevoMensaje.trim()) {
       try {
-        const response = await axios.post("http://localhost:8080/mensajes/enviar", {
+        const response = await axios.post("https://localhost:8080/mensajes/enviar", {
           emisorId: usuarioActualId,
           receptorId: usuarioDestinoId,
           contenido: nuevoMensaje,

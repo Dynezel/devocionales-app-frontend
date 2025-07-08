@@ -42,7 +42,7 @@ export default function RegistrarUsuario() {
       // Enviar solicitud POST al backend para registrar el usuario
       try {
         const response = await axios.post(
-          "http://localhost:8080/usuario/registro",
+          "https://localhost:8080/usuario/registro",
           formData, // Usamos formData en lugar de un objeto plano
 
         );

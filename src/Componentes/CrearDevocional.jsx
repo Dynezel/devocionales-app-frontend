@@ -11,7 +11,7 @@ export default function CrearDevocional() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const URL = "http://localhost:8080/devocionales/registro";
+    const URL = "https://localhost:8080/devocionales/registro";
 
     try {
       const response = await axios.post(
