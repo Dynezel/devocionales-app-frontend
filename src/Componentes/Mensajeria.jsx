@@ -37,7 +37,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
       webSocketFactory: () => socket,
       reconnectDelay: 5000,
       onConnect: () => {
-        console.log("WebSocket conectado");
+        alert("WebSocket conectado");
 
         stompClient.subscribe(`/user/queue/messages`, (message) => {
           const nuevo = JSON.parse(message.body);
