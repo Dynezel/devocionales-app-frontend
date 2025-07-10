@@ -19,7 +19,7 @@ export default function Seguidores({ usuarioId, usuarioActualId }) {
     const verificarSeguidor = async () => {
       try {
         const response = await axios.get(
-          `https://localhost:8080/seguidores/${usuarioId}/seguidores`
+          `https://devocionales-app-backend.onrender.com/seguidores/${usuarioId}/seguidores`
         );
         if (Array.isArray(response.data) && response.data.length > 0) {
           setSeguidores(response.data);
@@ -50,7 +50,7 @@ export default function Seguidores({ usuarioId, usuarioActualId }) {
 
     try {
       await axios.post(
-        `https://localhost:8080/seguidores/${usuarioActualId}/seguir/${usuarioId}`
+        `https://devocionales-app-backend.onrender.com/seguidores/${usuarioActualId}/seguir/${usuarioId}`
       );
       setEsSeguido(true);
       actualizarSeguidores();
@@ -67,7 +67,7 @@ export default function Seguidores({ usuarioId, usuarioActualId }) {
 
     try {
       await axios.delete(
-        `https://localhost:8080/seguidores/${usuarioActualId}/dejar-de-seguir/${usuarioId}`
+        `https://devocionales-app-backend.onrender.com/seguidores/${usuarioActualId}/dejar-de-seguir/${usuarioId}`
       );
       setEsSeguido(false);
       actualizarSeguidores();
@@ -79,7 +79,7 @@ export default function Seguidores({ usuarioId, usuarioActualId }) {
   const actualizarSeguidores = async () => {
     try {
       const response = await axios.get(
-        `https://localhost:8080/seguidores/${usuarioId}/seguidores`
+        `https://devocionales-app-backend.onrender.com/seguidores/${usuarioId}/seguidores`
       );
       if (Array.isArray(response.data)) {
         setSeguidores(response.data);
@@ -98,7 +98,7 @@ export default function Seguidores({ usuarioId, usuarioActualId }) {
     const obtenerSeguidos = async () => {
       try {
         const response = await axios.get(
-          `https://localhost:8080/seguidores/${usuarioId}/seguidos`
+          `https://devocionales-app-backend.onrender.com/seguidores/${usuarioId}/seguidos`
         );
         if (Array.isArray(response.data)) {
           setSeguidos(response.data);
@@ -155,7 +155,7 @@ export default function Seguidores({ usuarioId, usuarioActualId }) {
                     <button className="boton-seguidores-seguir">
                       {seguidor.usuario.fotoPerfil ? (
                         <img
-                          src={`https://localhost:8080/imagen/perfil/${seguidor.usuario.idUsuario}`}
+                          src={`https://devocionales-app-backend.onrender.com/imagen/perfil/${seguidor.usuario.idUsuario}`}
                           alt="Perfil"
                         />
                       ) : (
@@ -188,7 +188,7 @@ export default function Seguidores({ usuarioId, usuarioActualId }) {
                     <button className="boton-seguidores-seguir">
                       {seguido.seguido.fotoPerfil ? (
                         <img
-                          src={`https://localhost:8080/imagen/perfil/${seguido.seguido.idUsuario}`}
+                          src={`https://devocionales-app-backend.onrender.com/imagen/perfil/${seguido.seguido.idUsuario}`}
                           alt="Imagen de Perfil"
                         />
                       ) : (

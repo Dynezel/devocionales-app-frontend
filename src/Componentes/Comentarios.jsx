@@ -18,7 +18,7 @@ export default function Comentarios({ devocionalId, usuarioId }) {
     const fetchUser = async () => {
       try {
         const response = await axios.get(
-          "https://localhost:8080/usuario/perfil",
+          "https://devocionales-app-backend.onrender.com/usuario/perfil",
           { withCredentials: true }
         );
         setUser(response.data);
@@ -34,7 +34,7 @@ export default function Comentarios({ devocionalId, usuarioId }) {
     const fetchComentarios = async () => {
       try {
         const response = await axios.get(
-          `https://localhost:8080/devocionales/${devocionalId}/comentarios`,
+          `https://devocionales-app-backend.onrender.com/devocionales/${devocionalId}/comentarios`,
           {
             params: { usuarioId },
           }
@@ -43,7 +43,7 @@ export default function Comentarios({ devocionalId, usuarioId }) {
         const comentariosConUsuario = await Promise.all(
           response.data.map(async (comentario) => {
             const usuarioResponse = await axios.get(
-              `https://localhost:8080/usuario/perfil/${comentario.idUsuario}`
+              `https://devocionales-app-backend.onrender.com/usuario/perfil/${comentario.idUsuario}`
             );
             comentario.usuario = usuarioResponse.data;
             return comentario;
@@ -70,7 +70,7 @@ export default function Comentarios({ devocionalId, usuarioId }) {
       }
   
       const response = await axios.post(
-        `https://localhost:8080/devocionales/${devocionalId}/comentarios?usuarioId=${usuarioId}`,
+        `https://devocionales-app-backend.onrender.com/devocionales/${devocionalId}/comentarios?usuarioId=${usuarioId}`,
         {
           texto: nuevoComentario,
         },
@@ -92,7 +92,7 @@ export default function Comentarios({ devocionalId, usuarioId }) {
 
   const handleEliminarComentario = async (comentarioId) => {
     try {
-      await axios.delete(`https://localhost:8080/comentarios/${comentarioId}`, {
+      await axios.delete(`https://devocionales-app-backend.onrender.com/comentarios/${comentarioId}`, {
         withCredentials: true,
       });
       setComentarios(
@@ -116,7 +116,7 @@ export default function Comentarios({ devocionalId, usuarioId }) {
   const handleGuardarEdicion = async (comentarioId) => {
     try {
       await axios.put(
-        `https://localhost:8080/comentarios/${comentarioId}`,
+        `https://devocionales-app-backend.onrender.com/comentarios/${comentarioId}`,
         {
           texto: textoEditado,
         },
@@ -183,7 +183,7 @@ export default function Comentarios({ devocionalId, usuarioId }) {
             <li key={comentario.id} className="comentario-item">
               {comentario.usuario.idUsuario && (
                 <img
-                    src={`https://localhost:8080/imagen/perfil/${user.idUsuario}`}
+                    src={`https://devocionales-app-backend.onrender.com/imagen/perfil/${user.idUsuario}`}
                     alt="Foto de perfil"
                     className="imagenComentario"
                     onError={(e) => {

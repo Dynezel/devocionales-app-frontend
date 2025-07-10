@@ -15,7 +15,7 @@ export default function Amigos({ usuarioId, usuarioActualId }) {
   const obtenerAmigos = async () => {
     try {
       const response = await axios.get(
-        `https://localhost:8080/amistades/${usuarioId}/amigos`
+        `https://devocionales-app-backend.onrender.com/amistades/${usuarioId}/amigos`
       );
       setAmigos(response.data);
 
@@ -42,7 +42,7 @@ export default function Amigos({ usuarioId, usuarioActualId }) {
 
     try {
       await axios.post(
-        `https://localhost:8080/amistades/${usuarioActualId}/enviar-solicitud/${usuarioId}`
+        `https://devocionales-app-backend.onrender.com/amistades/${usuarioActualId}/enviar-solicitud/${usuarioId}`
       );
       setSolicitudEnviada(true);
       obtenerAmigos(); // Refresca la lista de amigos al enviar la solicitud
@@ -84,7 +84,7 @@ export default function Amigos({ usuarioId, usuarioActualId }) {
                     <Link to={`/usuario/perfil/${amigoAMostrar.idUsuario}`}>
                       <button className="boton-amigos">
                         <img
-                          src={`https://localhost:8080/imagen/perfil/${amigoAMostrar.idUsuario}`}
+                          src={`https://devocionales-app-backend.onrender.com/imagen/perfil/${amigoAMostrar.idUsuario}`}
                           alt="Perfil"
                           onError={(e) => {
                             e.target.onerror = null;

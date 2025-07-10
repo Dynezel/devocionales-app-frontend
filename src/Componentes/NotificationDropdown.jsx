@@ -15,12 +15,12 @@ const NotificationDropdown = ({ user }) => {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const response = await axios.get(`https://localhost:8080/notificaciones/${user.idUsuario}`);
+        const response = await axios.get(`https://devocionales-app-backend.onrender.com/notificaciones/${user.idUsuario}`);
         const notificationsWithImages = await Promise.all(
           response.data.map(async (notification) => {
             try {
               const imageResponse = await axios.get(
-                `https://localhost:8080/imagen/perfil/${notification.usuarioEmisorId}`,
+                `https://devocionales-app-backend.onrender.com/imagen/perfil/${notification.usuarioEmisorId}`,
                 { responseType: 'arraybuffer' }
               );
               const base64Image = btoa(
@@ -43,7 +43,7 @@ const NotificationDropdown = ({ user }) => {
 
   const handleNotificationClick = async (notification) => {
     try {
-      await axios.put(`https://localhost:8080/notificaciones/marcar-como-leida/${notification.id}`);
+      await axios.put(`https://devocionales-app-backend.onrender.com/notificaciones/marcar-como-leida/${notification.id}`);
       setNotifications((prevNotifications) =>
         prevNotifications.map((n) =>
           n.id === notification.id ? { ...n, visto: true } : n
@@ -62,7 +62,7 @@ const NotificationDropdown = ({ user }) => {
 
   const handleAceptarSolicitud = async (usuarioId, amigoId) => {
     try {
-      await axios.post(`https://localhost:8080/amistades/${usuarioId}/aceptar-solicitud/${amigoId}`);
+      await axios.post(`https://devocionales-app-backend.onrender.com/amistades/${usuarioId}/aceptar-solicitud/${amigoId}`);
       setNotifications((prevNotifications) =>
         prevNotifications.filter((notification) => notification.usuarioEmisorId !== amigoId)
       );
@@ -73,7 +73,7 @@ const NotificationDropdown = ({ user }) => {
   
   const handleRechazarSolicitud = async (usuarioId, amigoId) => {
     try {
-      await axios.delete(`https://localhost:8080/amistades/${usuarioId}/rechazar-solicitud/${amigoId}`);
+      await axios.delete(`https://devocionales-app-backend.onrender.com/amistades/${usuarioId}/rechazar-solicitud/${amigoId}`);
       setNotifications((prevNotifications) =>
         prevNotifications.filter((notification) => notification.usuarioEmisorId !== amigoId)
       );

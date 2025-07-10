@@ -44,7 +44,7 @@ export default function PerfilUsuario() {
     const fetchUsuario = async () => {
       try {
         const response = await axios.get(
-          "https://localhost:8080/usuario/perfil",
+          "https://devocionales-app-backend.onrender.com/usuario/perfil",
           { withCredentials: true }
         );
         setUsuario(response.data);
@@ -62,7 +62,7 @@ export default function PerfilUsuario() {
     const fetchUser = async () => {
       try {
         const response = await axios.get(
-          `https://localhost:8080/usuario/perfil/${idUsuario}`
+          `https://devocionales-app-backend.onrender.com/usuario/perfil/${idUsuario}`
         );
         setUser(response.data);
 
@@ -83,7 +83,7 @@ export default function PerfilUsuario() {
   const cargarImagenPerfil = async (idUsuario) => {
     try {
       const response = await axios.get(
-        `https://localhost:8080/imagen/perfil/${idUsuario}`,
+        `https://devocionales-app-backend.onrender.com/imagen/perfil/${idUsuario}`,
         {
           responseType: "arraybuffer",
         }

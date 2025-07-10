@@ -13,7 +13,7 @@ const Notificaciones = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await axios.get("https://localhost:8080/usuario/perfil", { withCredentials: true });
+        const response = await axios.get("https://devocionales-app-backend.onrender.com/usuario/perfil", { withCredentials: true });
         setUser(response.data);
       } catch (error) {
         console.error("No se ha podido encontrar al usuario", error);
@@ -26,7 +26,7 @@ const Notificaciones = () => {
     if (user) {
       const fetchNotifications = async () => {
         try {
-          const response = await axios.get(`https://localhost:8080/notificaciones/${user.idUsuario}`, { withCredentials: true });
+          const response = await axios.get(`https://devocionales-app-backend.onrender.com/notificaciones/${user.idUsuario}`, { withCredentials: true });
           setNotifications(response.data);
         } catch (error) {
           console.error('Error fetching notifications', error);
@@ -38,7 +38,7 @@ const Notificaciones = () => {
 
   const handleNotificationClick = async (notification) => {
     try {
-      await axios.put(`https://localhost:8080/notificaciones/marcar-como-leida/${notification.id}`);
+      await axios.put(`https://devocionales-app-backend.onrender.com/notificaciones/marcar-como-leida/${notification.id}`);
       setNotifications((prevNotifications) =>
         prevNotifications.map((n) => (n.id === notification.id ? { ...n, visto: true } : n))
       );
