@@ -129,11 +129,21 @@ const enviarMensaje = () => {
     contenido: nuevoMensaje,
   };
   if (stompClientRef.current && stompClientRef.current.connected) {
-    stompClientRef.current.publish({
-      destination: "/app/chat.send",
-      body: JSON.stringify(mensaje),
-    });
-    setNuevoMensaje("");
+  stompClientRef.current.publish({
+    destination: "/app/chat.send",
+    body: JSON.stringify(mensaje),
+  });
+
+  // Mostramos el mensaje instantáneamente (solo en UI local del emisor)
+  const mensajeObj = {
+    emisor: { idUsuario: usuarioActualId },
+    receptor: { idUsuario: usuarioId },
+    contenido: nuevoMensaje,
+    fechaEnvio: new Date().toISOString()
+  };
+
+  setConversacion((prev) => [...prev, mensajeObj]);
+  setNuevoMensaje("");
   } else {
     console.error("STOMP no está conectado");
   }
