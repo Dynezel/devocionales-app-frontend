@@ -32,7 +32,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
   const stompClientRef = useRef(null);
 
   useEffect(() => {
-    const socket = new SockJS("https://devocionales-app-backend.onrender.com/ws-notifications?userId=${usuarioActualId}`);");
+    const socket = new SockJS(`https://devocionales-app-backend.onrender.com/ws-notifications?userId=${usuarioActualId}`);
     const stompClient = new Client({
       webSocketFactory: () => socket,
       reconnectDelay: 5000,
