@@ -37,7 +37,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
       webSocketFactory: () => socket,
       reconnectDelay: 5000,
       onConnect: () => {
-        alert("WebSocket conectado");
+        console.log("WebSocket conectado");
 
         stompClient.subscribe(`/user/queue/messages`, (message) => {
           let body = message.body;
@@ -148,15 +148,6 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
         body: JSON.stringify(mensaje),
       });
 
-      // Mostramos el mensaje instantáneamente (solo en UI local del emisor)
-      const mensajeObj = {
-        emisor: { idUsuario: usuarioActualId },
-        receptor: { idUsuario: usuarioId },
-        contenido: nuevoMensaje,
-        fechaEnvio: new Date().toISOString()
-      };
-
-      setConversacion((prev) => [...prev, mensajeObj]);
       setNuevoMensaje("");
     } else {
       console.error("STOMP no está conectado");
