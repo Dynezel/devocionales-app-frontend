@@ -39,7 +39,8 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
       onConnect: () => {
         alert("WebSocket conectado");
 
-        stompClient.subscribe(`/user/queue/messages`, (message) => {
+        stompClient.subscribe(`/user/queue/messages`, (message) => {}
+          console.log("📩 Mensaje recibido:", message);
           const nuevo = JSON.parse(message.body);
           // Solo mostrar si el mensaje es para esta conversación
           if (
