@@ -9,7 +9,11 @@ export default function WebSocketComponent({ usuarioId, onNewNotification }) {
       return;
     }
     const socket = new SockJS(`https://devocionales-app-backend.onrender.com/ws-notifications?userId=${usuarioId}`);
+<<<<<<< HEAD
     alert("Connecting to:", `https://devocionales-app-backend.onrender.com/ws-notifications?userId=${usuarioId}`);
+=======
+    console.log("Connecting to:", `https://devocionales-app-backend.onrender.com/ws-notifications?userId=${usuarioId}`);
+>>>>>>> 24357c69f016a0e4682be2b6d31f403f4696348c
     const stompClient = Stomp.over(socket);
     console.log("Inicializando WebSocket con usuarioActualId:", usuarioActualId);
     if (!usuarioActualId) {
