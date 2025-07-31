@@ -137,17 +137,28 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
 
   const enviarMensaje = () => {
     if (nuevoMensaje.trim() === "") return;
+  
     const mensaje = {
-      emisorId: usuarioActualId,
-      receptorId: usuarioId,
+      emisor: { idUsuario: usuarioActualId },
+      receptor: { idUsuario: usuarioId },
       contenido: nuevoMensaje,
+      fechaEnvio: new Date().toISOString(),
+      id: Date.now() // temporal
     };
+  
     if (stompClientRef.current && stompClientRef.current.connected) {
       stompClientRef.current.publish({
         destination: "/app/chat.send",
-        body: JSON.stringify(mensaje),
+        body: JSON.stringify({
+          emisorId: usuarioActualId,
+          receptorId: usuarioId,
+          contenido: nuevoMensaje,
+        }),
       });
-
+  
+      // 🟢 Agregar inmediatamente a la conversación
+      setConversacion((prev) => [...prev, mensaje]);
+  
       setNuevoMensaje("");
     } else {
       console.error("STOMP no está conectado");
