@@ -290,7 +290,6 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
         <div className="popup-body">
           <Virtuoso
             ref={virtuosoRef}
-            style={{ height: "400px" }}
             data={conversacion}
             startReached={loadOlder}
             followOutput="auto"
