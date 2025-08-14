@@ -291,14 +291,26 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
             className="mensajes"
             style={{ height: "400px" }}
             data={conversacion}
-            startReached={loadOlder}
             followOutput="auto"
+            atTopStateChange={async (atTop) => {
+              if (atTop && hasMore && !loadingOlder) {
+                await loadOlder();
+                // mantener scroll en la posición anterior
+                if (virtuosoRef.current) {
+                  virtuosoRef.current.scrollToIndex({
+                    index: PAGE_SIZE, // después de agregar PAGE_SIZE mensajes arriba
+                    align: "start",
+                    behavior: "auto",
+                  });
+                }
+              }
+            }}
             itemContent={(index, mensaje) => {
               const fechaForm = formatFechaEnvio(mensaje.fechaEnvio);
               const mostrarFecha =
                 index === 0 ||
                 formatFechaEnvio(conversacion[index - 1]?.fechaEnvio).fecha !==
-                  fechaForm.fecha;
+                fechaForm.fecha;
               const esActual = Number(mensaje.emisor.idUsuario) === Number(usuarioActualId);
 
               return (
