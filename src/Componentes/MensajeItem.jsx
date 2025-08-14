@@ -1,4 +1,5 @@
 import React from "react";
+import "../css/Mensajeria.css";
 
 const MensajeItem = React.memo(function MensajeItem({ mensaje, esActual, imagenUsuario, imagenOtro, mostrarFecha, fechaTexto, horaTexto }) {
   return (
