@@ -68,18 +68,18 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
   const [nuevoMensaje, setNuevoMensaje] = useState("");
   const [minimizado, setMinimizado] = useState(false);
   const [nombreUsuario, setNombreUsuario] = useState("");
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(0);
+
   const imagenPerfilUsuario = useProfileImage(usuarioActualId);
   const imagenPerfilOtroUsuario = useProfileImage(usuarioId);
 
   const popupRef = useRef(null);
-  const [dragging, setDragging] = useState(false);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const [page, setPage] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
-  const [loadingOlder, setLoadingOlder] = useState(false);
+  const draggingRef = useRef(false);
+  const offsetRef = useRef({ x: 0, y: 0 });
   const stompClientRef = useRef(null);
   const messageBufferRef = useRef([]);
-  const lastUserScrollNearBottom = useRef(true);
   const virtuosoRef = useRef(null);
 
   // ===== Obtener nombre usuario =====
@@ -134,7 +134,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
     }
   }, [usuarioId, usuarioActualId, loadInitial]);
 
-  // ===== Cargar más antiguos =====
+  // ===== Cargar mensajes antiguos =====
   const loadOlder = useCallback(async () => {
     if (!hasMore || loadingOlder) return;
     setLoadingOlder(true);
@@ -163,10 +163,9 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
       reconnectDelay: 5000,
       onConnect: () => {
         stompClient.subscribe(`/user/queue/messages`, (message) => {
-          let body = message.body;
-          if (message.isBinaryBody && message._binaryBody) {
-            body = new TextDecoder().decode(message._binaryBody);
-          }
+          const body = message.isBinaryBody && message._binaryBody
+            ? new TextDecoder().decode(message._binaryBody)
+            : message.body;
           const nuevo = JSON.parse(body);
 
           const receptorId = Number(usuarioId);
@@ -177,9 +176,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
             (nuevo.emisor.idUsuario === emisorId &&
               nuevo.receptor.idUsuario === receptorId);
 
-          if (pertenece) {
-            messageBufferRef.current.push(nuevo);
-          }
+          if (pertenece) messageBufferRef.current.push(nuevo);
         });
       },
       onStompError: (frame) => console.error("Error STOMP:", frame),
@@ -187,11 +184,10 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
 
     stompClient.activate();
     stompClientRef.current = stompClient;
-
     return () => stompClient.deactivate();
   }, [usuarioId, usuarioActualId]);
 
-  // ===== Vaciar buffer cada X ms =====
+  // ===== Vaciar buffer =====
   useEffect(() => {
     const interval = setInterval(() => {
       if (messageBufferRef.current.length > 0) {
@@ -235,18 +231,18 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
 
   const handleMouseDown = (e) => {
     if (e.target.closest(".popup-header")) {
-      setDragging(true);
+      draggingRef.current = true;
       const rect = popupRef.current.getBoundingClientRect();
-      setOffset({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+      offsetRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
     }
   };
   const handleMouseMove = (e) => {
-    if (dragging && popupRef.current) {
-      popupRef.current.style.left = `${e.clientX - offset.x}px`;
-      popupRef.current.style.top = `${e.clientY - offset.y}px`;
+    if (draggingRef.current && popupRef.current) {
+      popupRef.current.style.left = `${e.clientX - offsetRef.current.x}px`;
+      popupRef.current.style.top = `${e.clientY - offsetRef.current.y}px`;
     }
   };
-  const handleMouseUp = () => setDragging(false);
+  const handleMouseUp = () => { draggingRef.current = false; };
 
   useEffect(() => {
     window.addEventListener("mousemove", handleMouseMove);
@@ -255,7 +251,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [dragging, offset]);
+  }, []);
 
   // Posición inicial
   useEffect(() => {
@@ -276,7 +272,6 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
     <div
       className={`mensajeria-popup ${minimizado ? "minimizado" : ""}`}
       ref={popupRef}
-      style={{ position: "fixed", left: "20px", top: "20px" }}
     >
       <div className="popup-header" onMouseDown={handleMouseDown}>
         <span>{nombreUsuario || "Seleccione una conversación"}</span>
@@ -288,8 +283,12 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
 
       {!minimizado && (
         <div className="popup-body">
+          {loadingOlder && (
+            <div className="mensaje-fecha-separador">Cargando mensajes antiguos...</div>
+          )}
           <Virtuoso
             ref={virtuosoRef}
+            style={{ height: "400px" }}
             data={conversacion}
             startReached={loadOlder}
             followOutput="auto"
