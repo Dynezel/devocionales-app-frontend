@@ -80,7 +80,7 @@
   .enviado .profile-picture {
     order: 2;
     margin-left: 10px;
-    background-color: rgb(218, 13, 13);
+    background-color: white;
   }
   
   .recibido {
@@ -94,16 +94,16 @@
   
   .recibido .profile-picture {
     margin-right: 10px;
-    background-color: rgb(255, 0, 0);
+    background-color: white;
   }
 
 .mensajes .profile-picture {
-  width: 30px;
-  height: 30px;
+  width: 15px;
+  height: 15px;
   border-radius: 50%;
   margin-right: 10px;
   margin-top: auto;
-  background-color: #ff0000;
+  background-color: #b3b3b3;
 }
 .mensaje-fecha {
   font-size: 0.8em;
