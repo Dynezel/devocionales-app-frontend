@@ -160,24 +160,14 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
   const loadOlder = useCallback(async () => {
     if (!hasMore || loadingOlder) return;
     setLoadingOlder(true);
+
     try {
-      const container = mensajesRef.current;
-      const prevScrollHeight = container?.scrollHeight ?? 0;
-
-      const data = await fetchPage(page);
+      const data = await fetchPage(page); // trae los mensajes antiguos
       if (data.length > 0) {
-        setConversacion((prev) => [...data, ...prev]); // prepend
-        setPage((p) => p + 1);
-
-        // Mantener posición de scroll (no "salta")
-        requestAnimationFrame(() => {
-          if (container) {
-            const newScrollHeight = container.scrollHeight;
-            container.scrollTop = newScrollHeight - prevScrollHeight;
-          }
-        });
+        setConversacion(prev => [...data, ...prev]); // prepend mensajes antiguos
+        setPage(prev => prev + 1);
       } else {
-        setHasMore(false);
+        setHasMore(false); // ya no hay más
       }
     } catch (e) {
       console.error("Error al cargar mensajes antiguos:", e);
@@ -378,15 +368,17 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
             ref={virtuosoRef}
             style={{ height: "400px" }}
             data={conversacion}
-            startReached={loadOlder}
-            followOutput={"auto"} // auto-scroll solo si estás abajo
+            startReached={loadOlder}          // se dispara al llegar al tope (arriba)
+            followOutput="auto"               // mantiene scroll abajo si estás viendo los últimos mensajes
+            atTopStateChange={(atTop) => {
+              // opcional: puedes mostrar un loader arriba si atTop && loadingOlder
+            }}
             itemContent={(index, mensaje) => {
               const fechaForm = formatFechaEnvio(mensaje.fechaEnvio);
               const mostrarFecha =
                 index === 0 ||
                 formatFechaEnvio(conversacion[index - 1]?.fechaEnvio).fecha !== fechaForm.fecha;
-              const esActual =
-                Number(mensaje.emisor.idUsuario) === Number(usuarioActualId);
+              const esActual = Number(mensaje.emisor.idUsuario) === Number(usuarioActualId);
 
               return (
                 <MensajeItem
