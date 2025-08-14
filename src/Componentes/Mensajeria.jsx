@@ -1,68 +1,234 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
-import defaultImage from '../Images/default-image-profile.jpg';
-
+import useProfileImage from "../hooks/useProfileImage";
+import { Virtuoso } from "react-virtuoso";
 import "../css/Mensajeria.css";
 
-// Función para formatear la fecha de envío
+// ==== Config ====
+const PAGE_SIZE = 20;
+const FLUSH_INTERVAL_MS = 100; // buffer flush frequency
+
+// ==== Helpers ====
 const formatFechaEnvio = (fechaEnvio) => {
   const fecha = new Date(fechaEnvio);
-  const opcionesFecha = { day: '2-digit', month: 'long' };
-  const opcionesHora = { hour: '2-digit', minute: '2-digit' };
-
+  const opcionesFecha = { day: "2-digit", month: "long" };
+  const opcionesHora = { hour: "2-digit", minute: "2-digit" };
   return {
-    fecha: fecha.toLocaleDateString('es-ES', opcionesFecha),
-    hora: fecha.toLocaleTimeString('es-ES', opcionesHora),
+    fecha: fecha.toLocaleDateString("es-ES", opcionesFecha),
+    hora: fecha.toLocaleTimeString("es-ES", opcionesHora),
   };
 };
+
+const isNearBottom = (el, threshold = 80) => {
+  if (!el) return false;
+  return el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
+};
+
+// ==== Item memoizado ====
+const MensajeItem = React.memo(function MensajeItem({
+  mensaje,
+  esActual,
+  imagenUsuario,
+  imagenOtro,
+  mostrarFecha,
+  fechaTexto,
+  horaTexto,
+}) {
+  return (
+    <>
+      {mostrarFecha && (
+        <div className="mensaje-fecha-separador">{fechaTexto}</div>
+      )}
+      <div className={`mensaje ${esActual ? "enviado" : "recibido"}`}>
+        {esActual ? (
+          <div className="mensaje-contenido enviado">
+            <div className="mensaje-texto">{mensaje.contenido}</div>
+            <img
+              src={imagenUsuario}
+              alt="Tu Imagen de Perfil"
+              className="profile-picture profile-picture-usuario"
+              loading="lazy"
+              decoding="async"
+              referrerPolicy="no-referrer"
+            />
+          </div>
+        ) : (
+          <div className="mensaje-contenido recibido">
+            <img
+              src={imagenOtro}
+              alt="Imagen de Perfil del Otro Usuario"
+              className="profile-picture profile-picture-otro"
+              loading="lazy"
+              decoding="async"
+              referrerPolicy="no-referrer"
+            />
+            <div className="mensaje-texto">{mensaje.contenido}</div>
+          </div>
+        )}
+        <div className="mensaje-fecha">{horaTexto}</div>
+      </div>
+    </>
+  );
+});
 
 export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
   const [conversacion, setConversacion] = useState([]);
   const [nuevoMensaje, setNuevoMensaje] = useState("");
   const [minimizado, setMinimizado] = useState(false);
   const [nombreUsuario, setNombreUsuario] = useState("");
-  const [imagenPerfilUsuario, setImagenPerfilUsuario] = useState(null);
-  const [imagenPerfilOtroUsuario, setImagenPerfilOtroUsuario] = useState(null);
+  const imagenPerfilUsuario = useProfileImage(usuarioActualId);
+  const imagenPerfilOtroUsuario = useProfileImage(usuarioId);
+  const mensajesRef = useRef(null);
+  const mensajesEndRef = useRef(null);
   const popupRef = useRef(null);
-  const mensajesEndRef = useRef(null); // Nueva referencia para el último mensaje
-  const [dragging, setDragging] = useState(false); // Estado para controlar el arrastre
-  const [offset, setOffset] = useState({ x: 0, y: 0 }); // Estado para almacenar el desplazamiento inicial
+  const [dragging, setDragging] = useState(false);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [page, setPage] = useState(0);            // página actual ya cargada (0 = la primera, los últimos N mensajes)
+  const [hasMore, setHasMore] = useState(true);   // si quedan más antiguos
+  const [loadingOlder, setLoadingOlder] = useState(false);
   const stompClientRef = useRef(null);
+  const messageBufferRef = useRef([]);            // buffer de mensajes entrantes
+  const lastUserScrollNearBottom = useRef(true);  // trackea si el usuario estaba cerca del final
+  const virtuosoRef = useRef(null);
+
+  // ===== Obtener nombre usuario (título) =====
+  useEffect(() => {
+    let cancel = false;
+    const obtenerNombreUsuario = async () => {
+      try {
+        const resp = await axios.get(
+          `https://devocionales-app-backend.onrender.com/usuario/perfil/${usuarioId}`
+        );
+        if (!cancel) setNombreUsuario(resp.data.nombre || "");
+      } catch (e) {
+        if (!cancel) setNombreUsuario("");
+        console.error("Error al obtener el nombre del usuario:", e);
+      }
+    };
+    if (usuarioId) obtenerNombreUsuario();
+    return () => { cancel = true; };
+  }, [usuarioId]);
+
+  // ===== Carga inicial de conversación (últimos PAGE_SIZE) =====
+  const fetchPage = useCallback(
+    async (pagina) => {
+      const params = {
+        emisorId: usuarioActualId,
+        receptorId: usuarioId,
+        page: pagina,
+        size: PAGE_SIZE,
+      };
+      const resp = await axios.get(
+        "https://devocionales-app-backend.onrender.com/mensajes/conversacion",
+        { params }
+      );
+      return resp.data || [];
+    },
+    [usuarioActualId, usuarioId]
+  );
+
+  const loadInitial = useCallback(async () => {
+    try {
+      const data = await fetchPage(0);
+      setConversacion(data);
+      setPage(1);
+      setHasMore(data.length === PAGE_SIZE);
+      // Scroll al final tras la carga inicial
+      requestAnimationFrame(() => {
+        if (mensajesRef.current) {
+          mensajesRef.current.scrollTop = mensajesRef.current.scrollHeight;
+        }
+      });
+    } catch (e) {
+      console.error("Error al cargar conversación inicial:", e);
+    }
+  }, [fetchPage]);
 
   useEffect(() => {
-    const socket = new SockJS(`https://devocionales-app-backend.onrender.com/ws-notifications?userId=${usuarioActualId}`);
+    if (usuarioId && usuarioActualId) {
+      setConversacion([]);
+      setPage(0);
+      setHasMore(true);
+      loadInitial();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [usuarioId, usuarioActualId]);
+
+  // ===== Cargar más antiguos al hacer scroll arriba =====
+  const loadOlder = useCallback(async () => {
+    if (!hasMore || loadingOlder) return;
+    setLoadingOlder(true);
+    try {
+      const container = mensajesRef.current;
+      const prevScrollHeight = container?.scrollHeight ?? 0;
+
+      const data = await fetchPage(page);
+      if (data.length > 0) {
+        setConversacion((prev) => [...data, ...prev]); // prepend
+        setPage((p) => p + 1);
+
+        // Mantener posición de scroll (no "salta")
+        requestAnimationFrame(() => {
+          if (container) {
+            const newScrollHeight = container.scrollHeight;
+            container.scrollTop = newScrollHeight - prevScrollHeight;
+          }
+        });
+      } else {
+        setHasMore(false);
+      }
+    } catch (e) {
+      console.error("Error al cargar mensajes antiguos:", e);
+    } finally {
+      setLoadingOlder(false);
+    }
+  }, [fetchPage, hasMore, loadingOlder, page]);
+
+  useEffect(() => {
+    const container = mensajesRef.current;
+    if (!container) return;
+
+    const onScroll = () => {
+      // si llega al tope, pedir más antiguos
+      if (container.scrollTop === 0 && hasMore && !loadingOlder) {
+        loadOlder();
+      }
+      // track si está cerca del final
+      lastUserScrollNearBottom.current = isNearBottom(container);
+    };
+
+    container.addEventListener("scroll", onScroll);
+    return () => container.removeEventListener("scroll", onScroll);
+  }, [hasMore, loadOlder, loadingOlder]);
+
+  // ===== WebSocket + Buffer =====
+  useEffect(() => {
+    const socket = new SockJS(
+      `https://devocionales-app-backend.onrender.com/ws-notifications?userId=${usuarioActualId}`
+    );
     const stompClient = new Client({
       webSocketFactory: () => socket,
       reconnectDelay: 5000,
       onConnect: () => {
-        console.log("WebSocket conectado");
-
         stompClient.subscribe(`/user/queue/messages`, (message) => {
           let body = message.body;
-
           if (message.isBinaryBody && message._binaryBody) {
             body = new TextDecoder().decode(message._binaryBody);
           }
-
           const nuevo = JSON.parse(body);
-          console.log("✅ Mensaje parseado:", nuevo);
 
-          // Convertir ambos a número explícitamente
           const receptorId = Number(usuarioId);
           const emisorId = Number(usuarioActualId);
-
-          if (
+          const pertenece =
             (nuevo.emisor.idUsuario === receptorId &&
               nuevo.receptor.idUsuario === emisorId) ||
             (nuevo.emisor.idUsuario === emisorId &&
-              nuevo.receptor.idUsuario === receptorId)
-          ) {
-            console.log("🎯 Mensaje pertenece a la conversación activa");
-            setConversacion((prev) => [...prev, nuevo]);
-          } else {
-            console.log("⛔ Mensaje NO corresponde a esta conversación");
+              nuevo.receptor.idUsuario === receptorId);
+
+          if (pertenece) {
+            messageBufferRef.current.push(nuevo); // buffer, no setea estado directo
           }
         });
       },
@@ -79,98 +245,72 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
     };
   }, [usuarioId, usuarioActualId]);
 
+  // Vaciar buffer cada X ms
   useEffect(() => {
-    const obtenerConversacion = async () => {
-      try {
-        const response = await axios.get("https://devocionales-app-backend.onrender.com/mensajes/conversacion", {
-          params: {
-            emisorId: usuarioActualId,
-            receptorId: usuarioId,
-          },
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
+    const interval = setInterval(() => {
+      if (messageBufferRef.current.length > 0) {
+        const batch = messageBufferRef.current;
+        messageBufferRef.current = [];
+        setConversacion((prev) => [...prev, ...batch]);
+
+        // autoscroll si el usuario está abajo
+        requestAnimationFrame(() => {
+          const container = mensajesRef.current;
+          if (container && lastUserScrollNearBottom.current) {
+            container.scrollTop = container.scrollHeight;
           }
         });
-        setConversacion(response.data);
-      } catch (error) {
-        console.error("Error al obtener la conversación:", error);
       }
-    };
+    }, FLUSH_INTERVAL_MS);
 
-    const obtenerNombreUsuario = async () => {
-      try {
-        const response = await axios.get(
-          `https://devocionales-app-backend.onrender.com/usuario/perfil/${usuarioId}`
-        );
-        setNombreUsuario(response.data.nombre);
-      } catch (error) {
-        console.error("Error al obtener el nombre del usuario:", error);
-      }
-    };
+    return () => clearInterval(interval);
+  }, []);
 
-    const cargarImagenPerfil = async (idUsuario, setImagenPerfil) => {
-      try {
-        const response = await axios.get(
-          `https://devocionales-app-backend.onrender.com/imagen/perfil/${idUsuario}`,
-          { responseType: "arraybuffer" }
-        );
-        const blob = new Blob([response.data], { type: "image/jpeg" });
-        const url = URL.createObjectURL(blob);
-        setImagenPerfil(url);
-      } catch (error) {
-        console.error("Error al cargar la imagen de perfil:", error);
-      }
-    };
-
-    obtenerConversacion();
-    obtenerNombreUsuario();
-    cargarImagenPerfil(usuarioActualId, setImagenPerfilUsuario);
-    cargarImagenPerfil(usuarioId, setImagenPerfilOtroUsuario);
-  }, [usuarioId, usuarioActualId]);
-
-  useEffect(() => {
-    if (mensajesEndRef.current) {
-      mensajesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [conversacion, minimizado]); // Ejecuta el scroll cuando cambia la conversación o se maximiza la ventana
-
+  // ===== Enviar mensaje =====
   const enviarMensaje = () => {
-    if (nuevoMensaje.trim() === "") return;
-  
-    const mensaje = {
+    if (!nuevoMensaje.trim()) return;
+
+    const tempMensaje = {
       emisor: { idUsuario: usuarioActualId },
       receptor: { idUsuario: usuarioId },
       contenido: nuevoMensaje,
       fechaEnvio: new Date().toISOString(),
-      id: Date.now() // temporal
+      id: Date.now(), // temporal, evita key duplicada
     };
-  
+
+    // pinta inmediato
+    setConversacion((prev) => [...prev, tempMensaje]);
+
+    // si el user está abajo, mantener auto-scroll
+    requestAnimationFrame(() => {
+      const container = mensajesRef.current;
+      if (container) container.scrollTop = container.scrollHeight;
+    });
+
+    setNuevoMensaje("");
+
     if (stompClientRef.current && stompClientRef.current.connected) {
       stompClientRef.current.publish({
         destination: "/app/chat.send",
         body: JSON.stringify({
           emisorId: usuarioActualId,
           receptorId: usuarioId,
-          contenido: nuevoMensaje,
+          contenido: tempMensaje.contenido,
         }),
       });
-  
-      // 🟢 Agregar inmediatamente a la conversación
-      setConversacion((prev) => [...prev, mensaje]);
-  
-      setNuevoMensaje("");
     } else {
       console.error("STOMP no está conectado");
     }
   };
 
+  // ===== Minimizar / Drag =====
   const toggleMinimizado = () => {
-    setMinimizado(!minimizado);
-    if (minimizado && mensajesEndRef.current) {
-      setTimeout(() => {
-        mensajesEndRef.current.scrollIntoView({ behavior: "smooth" });
-      }, 0);
+    setMinimizado((m) => !m);
+    if (mensajesEndRef.current && !minimizado) {
+      requestAnimationFrame(() => {
+        const container = mensajesRef.current;
+        if (container) container.scrollTop = container.scrollHeight;
+      });
     }
   };
 
@@ -184,32 +324,27 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
       });
     }
   };
-
   const handleMouseMove = (e) => {
-    if (dragging) {
+    if (dragging && popupRef.current) {
       const x = e.clientX - offset.x;
       const y = e.clientY - offset.y;
       popupRef.current.style.left = `${x}px`;
       popupRef.current.style.top = `${y}px`;
     }
   };
-
-  const handleMouseUp = () => {
-    setDragging(false);
-  };
+  const handleMouseUp = () => setDragging(false);
 
   useEffect(() => {
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("mouseup", handleMouseUp);
-
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
   }, [dragging, offset]);
 
+  // Posición inicial (esquina inferior derecha)
   useEffect(() => {
-    // Inicializar la posición del popup en la esquina inferior derecha de la ventana
     const ajustarPosicionInicial = () => {
       if (popupRef.current) {
         const { innerWidth, innerHeight } = window;
@@ -227,79 +362,65 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
     <div
       className={`mensajeria-popup ${minimizado ? "minimizado" : ""}`}
       ref={popupRef}
-      style={{ position: 'fixed', left: '20px', top: '20px' }} // Establece una posición inicial
+      style={{ position: "fixed", left: "20px", top: "20px" }}
     >
       <div className="popup-header" onMouseDown={handleMouseDown}>
         <span>{nombreUsuario || "Seleccione una conversación"}</span>
         <div className="popup-buttons">
-          <button onClick={toggleMinimizado}>
-            {minimizado ? "▢" : "—"}
-          </button>
+          <button onClick={toggleMinimizado}>{minimizado ? "▢" : "—"}</button>
           <button onClick={onClose}>✕</button>
         </div>
       </div>
+
       {!minimizado && (
         <div className="popup-body">
-          <div className="mensajes">
-            {conversacion.map((mensaje, index) => {
-              const fechaFormateada = formatFechaEnvio(mensaje.fechaEnvio);
+          <Virtuoso
+            ref={virtuosoRef}
+            style={{ height: "400px" }}
+            data={conversacion}
+            firstItemIndex={hasMore ? PAGE_SIZE * page * -1 : 0}
+            initialTopMostItemIndex={conversacion.length - 1}
+            startReached={loadOlder}
+            atBottomStateChange={(atBottom) => {
+              lastUserScrollNearBottom.current = atBottom;
+            }}
+            itemContent={(index, mensaje) => {
+              const fechaForm = formatFechaEnvio(mensaje.fechaEnvio);
               const mostrarFecha =
                 index === 0 ||
-                formatFechaEnvio(conversacion[index - 1].fechaEnvio).fecha !==
-                fechaFormateada.fecha;
+                formatFechaEnvio(
+                  conversacion[index - 1]?.fechaEnvio
+                ).fecha !== fechaForm.fecha;
+              const esActual =
+                Number(mensaje.emisor.idUsuario) === Number(usuarioActualId);
 
               return (
-                <React.Fragment key={mensaje.id}>
-                  {mostrarFecha && (
-                    <div className="mensaje-fecha-separador">
-                      {fechaFormateada.fecha}
-                    </div>
-                  )}
-                  <div
-                    className={`mensaje ${mensaje.emisor.idUsuario == usuarioActualId
-                      ? "enviado"
-                      : "recibido"
-                      }`}
-                  >
-                    {mensaje.emisor.idUsuario == usuarioActualId ? (
-                      <div className="mensaje-contenido enviado">
-                        <div className="mensaje-texto">
-                          {mensaje.contenido}
-                        </div>
-                        <img
-                          src={imagenPerfilUsuario || defaultImage}
-                          alt="Tu Imagen de Perfil"
-                          className="profile-picture profile-picture-usuario"
-                        />
-                      </div>
-                    ) : (
-                      <div className="mensaje-contenido recibido">
-                        <img
-                          src={imagenPerfilOtroUsuario}
-                          alt="Imagen de Perfil del Otro Usuario"
-                          className="profile-picture profile-picture-otro"
-                        />
-                        <div className="mensaje-texto">
-                          {mensaje.contenido}
-                        </div>
-                      </div>
-                    )}
-                    <div className="mensaje-fecha">
-                      {fechaFormateada.hora}
-                    </div>
-                  </div>
-                </React.Fragment>
+                <MensajeItem
+                  key={mensaje.id}
+                  mensaje={mensaje}
+                  esActual={esActual}
+                  imagenUsuario={imagenPerfilUsuario}
+                  imagenOtro={imagenPerfilOtroUsuario}
+                  mostrarFecha={mostrarFecha}
+                  fechaTexto={fechaForm.fecha}
+                  horaTexto={fechaForm.hora}
+                />
               );
-            })}
-            <div ref={mensajesEndRef} /> {/* Referencia al final de la conversación */}
-          </div>
-          <input
-            type="text"
-            value={nuevoMensaje}
-            onChange={(e) => setNuevoMensaje(e.target.value)}
-            placeholder="Escribe un mensaje..."
+            }}
           />
-          <button onClick={enviarMensaje}>Enviar</button>
+
+          <div className="input-row">
+            <input
+              type="text"
+              value={nuevoMensaje}
+              onChange={(e) => setNuevoMensaje(e.target.value)}
+              placeholder="Escribe un mensaje..."
+              onKeyDown={(e) => {
+                if (e.key === "Enter") enviarMensaje();
+              }}
+            />
+            <button onClick={enviarMensaje}>Enviar</button>
+          </div>
         </div>
       )}
     </div>
