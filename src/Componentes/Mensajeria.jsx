@@ -378,19 +378,13 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
             ref={virtuosoRef}
             style={{ height: "400px" }}
             data={conversacion}
-            firstItemIndex={hasMore ? PAGE_SIZE * page * -1 : 0}
-            initialTopMostItemIndex={conversacion.length - 1}
             startReached={loadOlder}
-            atBottomStateChange={(atBottom) => {
-              lastUserScrollNearBottom.current = atBottom;
-            }}
+            followOutput={"auto"} // auto-scroll solo si estás abajo
             itemContent={(index, mensaje) => {
               const fechaForm = formatFechaEnvio(mensaje.fechaEnvio);
               const mostrarFecha =
                 index === 0 ||
-                formatFechaEnvio(
-                  conversacion[index - 1]?.fechaEnvio
-                ).fecha !== fechaForm.fecha;
+                formatFechaEnvio(conversacion[index - 1]?.fechaEnvio).fecha !== fechaForm.fecha;
               const esActual =
                 Number(mensaje.emisor.idUsuario) === Number(usuarioActualId);
 
@@ -408,7 +402,6 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
               );
             }}
           />
-
           <div className="input-row">
             <input
               type="text"
