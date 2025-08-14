@@ -288,6 +288,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
           )}
           <Virtuoso
             ref={virtuosoRef}
+            className="mensajes"
             style={{ height: "400px" }}
             data={conversacion}
             startReached={loadOlder}
