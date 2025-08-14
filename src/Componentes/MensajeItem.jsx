@@ -3,7 +3,7 @@ import "../css/Mensajeria.css";
 
 const MensajeItem = React.memo(function MensajeItem({ mensaje, esActual, imagenUsuario, imagenOtro, mostrarFecha, fechaTexto, horaTexto }) {
   return (
-    <>
+    <div className="mensajes">
       {mostrarFecha && <div className="mensaje-fecha-separador">{fechaTexto}</div>}
       <div className={`mensaje ${esActual ? "enviado" : "recibido"}`}>
         {esActual ? (
@@ -33,7 +33,7 @@ const MensajeItem = React.memo(function MensajeItem({ mensaje, esActual, imagenU
         )}
         <div className="mensaje-fecha">{horaTexto}</div>
       </div>
-    </>
+    </div>
   );
 });
 export default MensajeItem;
