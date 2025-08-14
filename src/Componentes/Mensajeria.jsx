@@ -6,11 +6,9 @@ import useProfileImage from "../hooks/useProfileImage";
 import { Virtuoso } from "react-virtuoso";
 import "../css/Mensajeria.css";
 
-// ==== Config ====
 const PAGE_SIZE = 20;
-const FLUSH_INTERVAL_MS = 100; // buffer flush frequency
+const FLUSH_INTERVAL_MS = 100;
 
-// ==== Helpers ====
 const formatFechaEnvio = (fechaEnvio) => {
   const fecha = new Date(fechaEnvio);
   const opcionesFecha = { day: "2-digit", month: "long" };
@@ -21,12 +19,6 @@ const formatFechaEnvio = (fechaEnvio) => {
   };
 };
 
-const isNearBottom = (el, threshold = 80) => {
-  if (!el) return false;
-  return el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
-};
-
-// ==== Item memoizado ====
 const MensajeItem = React.memo(function MensajeItem({
   mensaje,
   esActual,
@@ -38,9 +30,7 @@ const MensajeItem = React.memo(function MensajeItem({
 }) {
   return (
     <>
-      {mostrarFecha && (
-        <div className="mensaje-fecha-separador">{fechaTexto}</div>
-      )}
+      {mostrarFecha && <div className="mensaje-fecha-separador">{fechaTexto}</div>}
       <div className={`mensaje ${esActual ? "enviado" : "recibido"}`}>
         {esActual ? (
           <div className="mensaje-contenido enviado">
@@ -80,23 +70,22 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
   const [nombreUsuario, setNombreUsuario] = useState("");
   const imagenPerfilUsuario = useProfileImage(usuarioActualId);
   const imagenPerfilOtroUsuario = useProfileImage(usuarioId);
-  const mensajesRef = useRef(null);
-  const mensajesEndRef = useRef(null);
+
   const popupRef = useRef(null);
   const [dragging, setDragging] = useState(false);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const [page, setPage] = useState(0);            // página actual ya cargada (0 = la primera, los últimos N mensajes)
-  const [hasMore, setHasMore] = useState(true);   // si quedan más antiguos
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const stompClientRef = useRef(null);
-  const messageBufferRef = useRef([]);            // buffer de mensajes entrantes
-  const lastUserScrollNearBottom = useRef(true);  // trackea si el usuario estaba cerca del final
+  const messageBufferRef = useRef([]);
+  const lastUserScrollNearBottom = useRef(true);
   const virtuosoRef = useRef(null);
 
-  // ===== Obtener nombre usuario (título) =====
+  // ===== Obtener nombre usuario =====
   useEffect(() => {
     let cancel = false;
-    const obtenerNombreUsuario = async () => {
+    const fetchNombre = async () => {
       try {
         const resp = await axios.get(
           `https://devocionales-app-backend.onrender.com/usuario/perfil/${usuarioId}`
@@ -104,25 +93,25 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
         if (!cancel) setNombreUsuario(resp.data.nombre || "");
       } catch (e) {
         if (!cancel) setNombreUsuario("");
-        console.error("Error al obtener el nombre del usuario:", e);
       }
     };
-    if (usuarioId) obtenerNombreUsuario();
+    if (usuarioId) fetchNombre();
     return () => { cancel = true; };
   }, [usuarioId]);
 
-  // ===== Carga inicial de conversación (últimos PAGE_SIZE) =====
+  // ===== Carga inicial de conversación =====
   const fetchPage = useCallback(
     async (pagina) => {
-      const params = {
-        emisorId: usuarioActualId,
-        receptorId: usuarioId,
-        page: pagina,
-        size: PAGE_SIZE,
-      };
       const resp = await axios.get(
         "https://devocionales-app-backend.onrender.com/mensajes/conversacion",
-        { params }
+        {
+          params: {
+            emisorId: usuarioActualId,
+            receptorId: usuarioId,
+            page: pagina,
+            size: PAGE_SIZE,
+          },
+        }
       );
       return resp.data || [];
     },
@@ -130,20 +119,10 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
   );
 
   const loadInitial = useCallback(async () => {
-    try {
-      const data = await fetchPage(0);
-      setConversacion(data);
-      setPage(1);
-      setHasMore(data.length === PAGE_SIZE);
-      // Scroll al final tras la carga inicial
-      requestAnimationFrame(() => {
-        if (mensajesRef.current) {
-          mensajesRef.current.scrollTop = mensajesRef.current.scrollHeight;
-        }
-      });
-    } catch (e) {
-      console.error("Error al cargar conversación inicial:", e);
-    }
+    const data = await fetchPage(0);
+    setConversacion(data);
+    setPage(1);
+    setHasMore(data.length === PAGE_SIZE);
   }, [fetchPage]);
 
   useEffect(() => {
@@ -153,21 +132,19 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
       setHasMore(true);
       loadInitial();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [usuarioId, usuarioActualId]);
+  }, [usuarioId, usuarioActualId, loadInitial]);
 
-  // ===== Cargar más antiguos al hacer scroll arriba =====
+  // ===== Cargar más antiguos =====
   const loadOlder = useCallback(async () => {
     if (!hasMore || loadingOlder) return;
     setLoadingOlder(true);
-
     try {
-      const data = await fetchPage(page); // trae los mensajes antiguos
+      const data = await fetchPage(page);
       if (data.length > 0) {
-        setConversacion(prev => [...data, ...prev]); // prepend mensajes antiguos
-        setPage(prev => prev + 1);
+        setConversacion((prev) => [...data, ...prev]);
+        setPage((p) => p + 1);
       } else {
-        setHasMore(false); // ya no hay más
+        setHasMore(false);
       }
     } catch (e) {
       console.error("Error al cargar mensajes antiguos:", e);
@@ -176,24 +153,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
     }
   }, [fetchPage, hasMore, loadingOlder, page]);
 
-  useEffect(() => {
-    const container = mensajesRef.current;
-    if (!container) return;
-
-    const onScroll = () => {
-      // si llega al tope, pedir más antiguos
-      if (container.scrollTop === 0 && hasMore && !loadingOlder) {
-        loadOlder();
-      }
-      // track si está cerca del final
-      lastUserScrollNearBottom.current = isNearBottom(container);
-    };
-
-    container.addEventListener("scroll", onScroll);
-    return () => container.removeEventListener("scroll", onScroll);
-  }, [hasMore, loadOlder, loadingOlder]);
-
-  // ===== WebSocket + Buffer =====
+  // ===== WebSocket + buffer =====
   useEffect(() => {
     const socket = new SockJS(
       `https://devocionales-app-backend.onrender.com/ws-notifications?userId=${usuarioActualId}`
@@ -218,41 +178,28 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
               nuevo.receptor.idUsuario === receptorId);
 
           if (pertenece) {
-            messageBufferRef.current.push(nuevo); // buffer, no setea estado directo
+            messageBufferRef.current.push(nuevo);
           }
         });
       },
-      onStompError: (frame) => {
-        console.error("Error en STOMP:", frame);
-      },
+      onStompError: (frame) => console.error("Error STOMP:", frame),
     });
 
     stompClient.activate();
     stompClientRef.current = stompClient;
 
-    return () => {
-      stompClient.deactivate();
-    };
+    return () => stompClient.deactivate();
   }, [usuarioId, usuarioActualId]);
 
-  // Vaciar buffer cada X ms
+  // ===== Vaciar buffer cada X ms =====
   useEffect(() => {
     const interval = setInterval(() => {
       if (messageBufferRef.current.length > 0) {
         const batch = messageBufferRef.current;
         messageBufferRef.current = [];
         setConversacion((prev) => [...prev, ...batch]);
-
-        // autoscroll si el usuario está abajo
-        requestAnimationFrame(() => {
-          const container = mensajesRef.current;
-          if (container && lastUserScrollNearBottom.current) {
-            container.scrollTop = container.scrollHeight;
-          }
-        });
       }
     }, FLUSH_INTERVAL_MS);
-
     return () => clearInterval(interval);
   }, []);
 
@@ -265,21 +212,13 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
       receptor: { idUsuario: usuarioId },
       contenido: nuevoMensaje,
       fechaEnvio: new Date().toISOString(),
-      id: Date.now(), // temporal, evita key duplicada
+      id: Date.now(),
     };
 
-    // pinta inmediato
     setConversacion((prev) => [...prev, tempMensaje]);
-
-    // si el user está abajo, mantener auto-scroll
-    requestAnimationFrame(() => {
-      const container = mensajesRef.current;
-      if (container) container.scrollTop = container.scrollHeight;
-    });
-
     setNuevoMensaje("");
 
-    if (stompClientRef.current && stompClientRef.current.connected) {
+    if (stompClientRef.current?.connected) {
       stompClientRef.current.publish({
         destination: "/app/chat.send",
         body: JSON.stringify({
@@ -288,38 +227,23 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
           contenido: tempMensaje.contenido,
         }),
       });
-    } else {
-      console.error("STOMP no está conectado");
     }
   };
 
-  // ===== Minimizar / Drag =====
-  const toggleMinimizado = () => {
-    setMinimizado((m) => !m);
-    if (mensajesEndRef.current && !minimizado) {
-      requestAnimationFrame(() => {
-        const container = mensajesRef.current;
-        if (container) container.scrollTop = container.scrollHeight;
-      });
-    }
-  };
+  // ===== Minimizar y drag =====
+  const toggleMinimizado = () => setMinimizado((m) => !m);
 
   const handleMouseDown = (e) => {
     if (e.target.closest(".popup-header")) {
       setDragging(true);
       const rect = popupRef.current.getBoundingClientRect();
-      setOffset({
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
-      });
+      setOffset({ x: e.clientX - rect.left, y: e.clientY - rect.top });
     }
   };
   const handleMouseMove = (e) => {
     if (dragging && popupRef.current) {
-      const x = e.clientX - offset.x;
-      const y = e.clientY - offset.y;
-      popupRef.current.style.left = `${x}px`;
-      popupRef.current.style.top = `${y}px`;
+      popupRef.current.style.left = `${e.clientX - offset.x}px`;
+      popupRef.current.style.top = `${e.clientY - offset.y}px`;
     }
   };
   const handleMouseUp = () => setDragging(false);
@@ -333,9 +257,9 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
     };
   }, [dragging, offset]);
 
-  // Posición inicial (esquina inferior derecha)
+  // Posición inicial
   useEffect(() => {
-    const ajustarPosicionInicial = () => {
+    const ajustarPosicion = () => {
       if (popupRef.current) {
         const { innerWidth, innerHeight } = window;
         const { clientWidth, clientHeight } = popupRef.current;
@@ -343,9 +267,9 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
         popupRef.current.style.top = `${innerHeight - clientHeight - 60}px`;
       }
     };
-    ajustarPosicionInicial();
-    window.addEventListener("resize", ajustarPosicionInicial);
-    return () => window.removeEventListener("resize", ajustarPosicionInicial);
+    ajustarPosicion();
+    window.addEventListener("resize", ajustarPosicion);
+    return () => window.removeEventListener("resize", ajustarPosicion);
   }, []);
 
   return (
@@ -368,16 +292,14 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
             ref={virtuosoRef}
             style={{ height: "400px" }}
             data={conversacion}
-            startReached={loadOlder}          // se dispara al llegar al tope (arriba)
-            followOutput="auto"               // mantiene scroll abajo si estás viendo los últimos mensajes
-            atTopStateChange={(atTop) => {
-              // opcional: puedes mostrar un loader arriba si atTop && loadingOlder
-            }}
+            startReached={loadOlder}
+            followOutput="auto"
             itemContent={(index, mensaje) => {
               const fechaForm = formatFechaEnvio(mensaje.fechaEnvio);
               const mostrarFecha =
                 index === 0 ||
-                formatFechaEnvio(conversacion[index - 1]?.fechaEnvio).fecha !== fechaForm.fecha;
+                formatFechaEnvio(conversacion[index - 1]?.fechaEnvio).fecha !==
+                  fechaForm.fecha;
               const esActual = Number(mensaje.emisor.idUsuario) === Number(usuarioActualId);
 
               return (
@@ -394,15 +316,14 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
               );
             }}
           />
+
           <div className="input-row">
             <input
               type="text"
               value={nuevoMensaje}
               onChange={(e) => setNuevoMensaje(e.target.value)}
               placeholder="Escribe un mensaje..."
-              onKeyDown={(e) => {
-                if (e.key === "Enter") enviarMensaje();
-              }}
+              onKeyDown={(e) => { if (e.key === "Enter") enviarMensaje(); }}
             />
             <button onClick={enviarMensaje}>Enviar</button>
           </div>
