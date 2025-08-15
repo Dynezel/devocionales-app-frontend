@@ -19,14 +19,60 @@ const formatFechaEnvio = (fechaEnvio) => {
   };
 };
 
+const MensajeItem = React.memo(function MensajeItem({
+  mensaje,
+  esActual,
+  imagenUsuario,
+  imagenOtro,
+  mostrarFecha,
+  fechaTexto,
+  horaTexto,
+}) {
+  return (
+    <>
+      {mostrarFecha && (
+        <div className="mensaje-fecha-separador">{fechaTexto}</div>
+      )}
+      <div className={`mensaje ${esActual ? "enviado" : "recibido"}`}>
+        {esActual ? (
+          <div className="mensaje-contenido enviado">
+            <div className="mensaje-texto">{mensaje.contenido}</div>
+            <img
+              src={imagenUsuario}
+              alt="Tu Imagen de Perfil"
+              className="profile-picture profile-picture-usuario"
+              loading="lazy"
+              decoding="async"
+              referrerPolicy="no-referrer"
+            />
+          </div>
+        ) : (
+          <div className="mensaje-contenido recibido">
+            <img
+              src={imagenOtro}
+              alt="Imagen de Perfil del Otro Usuario"
+              className="profile-picture profile-picture-otro"
+              loading="lazy"
+              decoding="async"
+              referrerPolicy="no-referrer"
+            />
+            <div className="mensaje-texto">{mensaje.contenido}</div>
+          </div>
+        )}
+        <div className="mensaje-fecha">{horaTexto}</div>
+      </div>
+    </>
+  );
+});
+
 export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
   const [mensajes, setMensajes] = useState([]);
   const [nuevoMensaje, setNuevoMensaje] = useState("");
   const [minimizado, setMinimizado] = useState(false);
   const [nombreUsuario, setNombreUsuario] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
 
   const imagenPerfilUsuario = useProfileImage(usuarioActualId);
   const imagenPerfilOtroUsuario = useProfileImage(usuarioId);
@@ -36,7 +82,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
   const virtuosoRef = useRef(null);
   const initialLoadDone = useRef(false);
 
-  // ===== Obtener nombre del usuario =====
+  // ===== Obtener nombre usuario =====
   useEffect(() => {
     let cancel = false;
     (async () => {
@@ -54,7 +100,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
 
   // ===== Fetch mensajes =====
   const fetchMensajes = useCallback(async (pagina) => {
-    if (!hasMore && pagina !== 0) return;
+    if (!hasMore && pagina !== 0) return [];
 
     setIsLoading(true);
     try {
@@ -70,28 +116,38 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
         }
       );
 
+      const nuevosMensajes = data?.content || [];
+
       if (pagina === 0) {
-        setMensajes(data.content);
+        setMensajes(nuevosMensajes);
       } else {
-        setMensajes((prev) => [...data.content, ...prev]);
+        setMensajes((prev) => [...nuevosMensajes, ...prev]);
       }
 
-      setHasMore(!data.last); // Backend indica si es la última página
+      setHasMore(!data?.last);
       setPage(pagina);
+      return nuevosMensajes;
     } catch (error) {
       console.error("Error cargando mensajes:", error);
+      return [];
     } finally {
       setIsLoading(false);
     }
   }, [usuarioActualId, usuarioId, hasMore]);
 
-  // ===== Carga inicial sin doble request =====
+  // ===== Carga inicial =====
   useEffect(() => {
-    if (!initialLoadDone.current) {
+    if (!initialLoadDone.current && usuarioId && usuarioActualId) {
       fetchMensajes(0);
       initialLoadDone.current = true;
     }
-  }, [fetchMensajes]);
+  }, [fetchMensajes, usuarioId, usuarioActualId]);
+
+  // ===== Cargar mensajes más antiguos =====
+  const loadOlder = useCallback(async () => {
+    if (!hasMore || isLoading) return;
+    await fetchMensajes(page + 1);
+  }, [fetchMensajes, hasMore, isLoading, page]);
 
   // ===== WebSocket =====
   useEffect(() => {
@@ -125,7 +181,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
     return () => stompClient.deactivate();
   }, [usuarioId, usuarioActualId]);
 
-  // ===== Flush buffer =====
+  // ===== Flush buffer de WebSocket =====
   useEffect(() => {
     const interval = setInterval(() => {
       if (messageBufferRef.current.length > 0) {
@@ -175,7 +231,8 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
       </div>
 
       {!minimizado && (
-        <div className="popup-body">
+        <div className="popup-body" style={{ position: "relative", height: "400px" }}>
+          {/* Loader fijo */}
           {isLoading && (
             <div className="loader-fixed-top">
               Cargando Mensajes...
@@ -184,18 +241,30 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
 
           <Virtuoso
             ref={virtuosoRef}
-            className="mensajes"
             style={{ height: "100%" }}
-            data={mensajes}
-            firstItemIndex={Math.max(0, mensajes.length - 1)}
-            startReached={() => {
-              if (!isLoading && hasMore) {
-                fetchMensajes(page + 1);
-              }
+            className="mensajes"
+            data={mensajes || []}
+            followOutput="auto"
+            startReached={loadOlder}
+            itemContent={(index, mensaje) => {
+              const fechaForm = formatFechaEnvio(mensaje.fechaEnvio);
+              const mostrarFecha =
+                index === 0 ||
+                formatFechaEnvio(mensajes[index - 1]?.fechaEnvio).fecha !== fechaForm.fecha;
+              const esActual = Number(mensaje.emisor.idUsuario) === Number(usuarioActualId);
+              return (
+                <MensajeItem
+                  key={mensaje.id}
+                  mensaje={mensaje}
+                  esActual={esActual}
+                  imagenUsuario={imagenPerfilUsuario}
+                  imagenOtro={imagenPerfilOtroUsuario}
+                  mostrarFecha={mostrarFecha}
+                  fechaTexto={fechaForm.fecha}
+                  horaTexto={fechaForm.hora}
+                />
+              );
             }}
-            itemContent={(index, mensaje) => (
-              <div style={{ padding: "10px" }}>{mensaje.contenido}</div>
-            )}
           />
 
           <div className="input-row">
@@ -204,9 +273,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
               value={nuevoMensaje}
               onChange={(e) => setNuevoMensaje(e.target.value)}
               placeholder="Escribe un mensaje..."
-              onKeyDown={(e) => {
-                if (e.key === "Enter") enviarMensaje();
-              }}
+              onKeyDown={(e) => { if (e.key === "Enter") enviarMensaje(); }}
             />
             <button onClick={enviarMensaje}>Enviar</button>
           </div>
