@@ -138,21 +138,21 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
   const loadOlder = useCallback(async () => {
     if (!hasMore || loadingOlder) return;
     setLoadingOlder(true);
-  
     try {
       const data = await fetchPage(page);
       if (data.length > 0) {
-        setConversacion(prev => [...data, ...prev]);
-        setPage(p => p + 1);
+        setConversacion((prev) => [...data, ...prev]);
+        setPage((p) => p + 1);
       } else {
         setHasMore(false);
       }
     } catch (e) {
-      console.error("Error cargando mensajes antiguos:", e);
+      console.error("Error al cargar mensajes antiguos:", e);
     } finally {
       setLoadingOlder(false);
     }
   }, [fetchPage, hasMore, loadingOlder, page]);
+
   // ===== WebSocket + buffer =====
   useEffect(() => {
     const socket = new SockJS(
@@ -284,7 +284,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
       {!minimizado && (
         <div className="popup-body">
           <div className="mensajes-container" style={{ position: "relative", height: "400px" }}>
-          
+            {loadingOlder && (<div className="mensaje-fecha-separador">Cargando mensajes ...</div>)}
             <Virtuoso
               ref={virtuosoRef}
               className="mensajes"
@@ -292,10 +292,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
               data={conversacion}
               followOutput="auto"
               atTopStateChange={(atTop) => {
-                if (atTop && hasMore && !loadingOlder) {
-                  // Llamamos a loadOlder, que ya maneja async internamente
-                  loadOlder();
-                }
+                if (atTop) loadOlder(); // loadOlder ya bloquea con loadingOlder
               }}
               itemContent={(index, mensaje) => {
                 const fechaForm = formatFechaEnvio(mensaje.fechaEnvio);
