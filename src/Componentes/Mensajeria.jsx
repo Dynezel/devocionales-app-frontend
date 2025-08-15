@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
-import useProfileImage from "../hooks/useProfileImage";
 import { Virtuoso } from "react-virtuoso";
+import useProfileImage from "../hooks/useProfileImage";
 import "../css/Mensajeria.css";
 
 const PAGE_SIZE = 20;
@@ -55,7 +55,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
   // ===== Fetch mensajes =====
   const fetchMensajes = useCallback(async (pagina) => {
     if (!hasMore && pagina !== 0) return [];
-  
+
     setIsLoading(true);
     try {
       const { data } = await axios.get(
@@ -69,17 +69,17 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
           },
         }
       );
-  
+
       if (pagina === 0) {
         setMensajes(data.content);
       } else {
         setMensajes((prev) => [...data.content, ...prev]);
       }
-  
+
       setHasMore(!data.last);
       setPage(pagina);
-  
-      return data.content; // <--- Retornar los mensajes cargados
+
+      return data.content;
     } catch (error) {
       console.error("Error cargando mensajes:", error);
       return [];
@@ -88,7 +88,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
     }
   }, [usuarioActualId, usuarioId, hasMore]);
 
-  // ===== Carga inicial sin doble request =====
+  // ===== Carga inicial =====
   useEffect(() => {
     if (!initialLoadDone.current) {
       fetchMensajes(0);
@@ -134,7 +134,16 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
       if (messageBufferRef.current.length > 0) {
         const batch = messageBufferRef.current;
         messageBufferRef.current = [];
-        setMensajes((prev) => [...prev, ...batch]);
+        setMensajes((prev) => {
+          const next = [...prev, ...batch];
+          // Scroll automático si estamos al final
+          setTimeout(() => {
+            if (virtuosoRef.current) {
+              virtuosoRef.current.scrollToIndex({ index: next.length - 1 });
+            }
+          }, 0);
+          return next;
+        });
       }
     }, FLUSH_INTERVAL_MS);
     return () => clearInterval(interval);
@@ -188,7 +197,6 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
               if (!isLoading && hasMore) {
                 const nuevos = await fetchMensajes(page + 1);
                 if (nuevos.length > 0 && virtuosoRef.current) {
-                  // Mantener scroll al cargar arriba
                   virtuosoRef.current.scrollToIndex({ index: nuevos.length, align: "start" });
                 }
               }
