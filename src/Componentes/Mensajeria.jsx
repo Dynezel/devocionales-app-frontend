@@ -101,11 +101,9 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
 
   // ===== Fetch mensajes =====
   const fetchPage = useCallback(async (pagina) => {
-    
-    if (cargando) return;
+    if (cargando) return [];
     setCargando(true);
-
-    async (pagina) => {
+    try {
       const resp = await axios.get(
         "https://devocionales-app-backend.onrender.com/mensajes/conversacion",
         {
@@ -118,9 +116,12 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
         }
       );
       return resp.data || [];
-    },
-    [usuarioActualId, usuarioId]
-  });
+    } catch {
+      return [];
+    } finally {
+      setCargando(false);
+    }
+  }, [usuarioActualId, usuarioId, cargando]);
 
   const loadInitial = useCallback(async () => {
     const data = await fetchPage(0);
@@ -129,13 +130,16 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
     setHasMore(data.length === PAGE_SIZE);
   }, [fetchPage]);
 
+  // Evita doble carga inicial
   useEffect(() => {
-    if (usuarioId && usuarioActualId) {
-      setConversacion([]);
-      setPage(0);
-      setHasMore(true);
-      loadInitial();
-    }
+    if (!usuarioId || !usuarioActualId) return;
+    if (inicialCargado.current) return;
+    inicialCargado.current = true;
+
+    setConversacion([]);
+    setPage(0);
+    setHasMore(true);
+    loadInitial();
   }, [usuarioId, usuarioActualId, loadInitial]);
 
   const loadOlder = useCallback(async () => {
@@ -196,7 +200,9 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
         setConversacion((prev) => [...prev, ...batch]);
         setTimeout(() => {
           if (virtuosoRef.current) {
-            virtuosoRef.current.scrollToIndex({ index: conversacion.length + batch.length - 1 });
+            virtuosoRef.current.scrollToIndex({
+              index: conversacion.length + batch.length - 1,
+            });
           }
         }, 0);
       }
@@ -234,7 +240,9 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
       <div className="popup-header">
         <span>{nombreUsuario || "Seleccione una conversación"}</span>
         <div className="popup-buttons">
-          <button onClick={() => setMinimizado((m) => !m)}>{minimizado ? "▢" : "—"}</button>
+          <button onClick={() => setMinimizado((m) => !m)}>
+            {minimizado ? "▢" : "—"}
+          </button>
           <button onClick={onClose}>✕</button>
         </div>
       </div>
@@ -244,6 +252,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
             {loadingOlder && <div className="loader-fixed-top">Cargando mensajes...</div>}
             <Virtuoso
               ref={virtuosoRef}
+              firstItemIndex={0}
               style={{ height: "100%" }}
               className="mensajes"
               data={conversacion || []}
@@ -251,6 +260,9 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
               atTopStateChange={(atTop) => {
                 if (atTop) loadOlder();
               }}
+              initialTopMostItemIndex={
+                conversacion.length > 0 ? conversacion.length - 1 : 0
+              }
               itemContent={(index, mensaje) => {
                 const fechaForm = formatFechaEnvio(mensaje.fechaEnvio);
                 const mostrarFecha =
