@@ -127,24 +127,6 @@
   color: #ffffff;
 }
 
-.mensajeria-container {
-  position: relative;
-  height: 100%;
-}
-
-.loader-fixed-top {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 10;
-  background: #242424;
-  color: #ffffff;
-  display: flex;
-  justify-content: center;
-  padding: 4px;
-}
-
 @media (max-width: 768px) {
   .mensajeria-popup {
     width: 90vw; /* Ajustar el ancho al 90% del ancho de la pantalla */

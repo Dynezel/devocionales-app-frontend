@@ -1,246 +1,238 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
-import useProfileImage from "../hooks/useProfileImage";
-import { Virtuoso } from "react-virtuoso";
+import defaultImage from '../Images/default-image-profile.jpg';
+
 import "../css/Mensajeria.css";
 
-const PAGE_SIZE = 20;
-const FLUSH_INTERVAL_MS = 100;
-
+// Función para formatear la fecha de envío
 const formatFechaEnvio = (fechaEnvio) => {
   const fecha = new Date(fechaEnvio);
-  const opcionesFecha = { day: "2-digit", month: "long" };
-  const opcionesHora = { hour: "2-digit", minute: "2-digit" };
+  const opcionesFecha = { day: '2-digit', month: 'long' };
+  const opcionesHora = { hour: '2-digit', minute: '2-digit' };
+
   return {
-    fecha: fecha.toLocaleDateString("es-ES", opcionesFecha),
-    hora: fecha.toLocaleTimeString("es-ES", opcionesHora),
+    fecha: fecha.toLocaleDateString('es-ES', opcionesFecha),
+    hora: fecha.toLocaleTimeString('es-ES', opcionesHora),
   };
 };
-
-const MensajeItem = React.memo(function MensajeItem({
-  mensaje,
-  esActual,
-  imagenUsuario,
-  imagenOtro,
-  mostrarFecha,
-  fechaTexto,
-  horaTexto,
-}) {
-  return (
-    <>
-      {mostrarFecha && <div className="mensaje-fecha-separador">{fechaTexto}</div>}
-      <div className={`mensaje ${esActual ? "enviado" : "recibido"}`}>
-        {esActual ? (
-          <div className="mensaje-contenido enviado">
-            <div className="mensaje-texto">{mensaje.contenido}</div>
-            <img
-              src={imagenUsuario}
-              alt="Tu Imagen de Perfil"
-              className="profile-picture profile-picture-usuario"
-              loading="lazy"
-              decoding="async"
-              referrerPolicy="no-referrer"
-            />
-          </div>
-        ) : (
-          <div className="mensaje-contenido recibido">
-            <img
-              src={imagenOtro}
-              alt="Imagen de Perfil del Otro Usuario"
-              className="profile-picture profile-picture-otro"
-              loading="lazy"
-              decoding="async"
-              referrerPolicy="no-referrer"
-            />
-            <div className="mensaje-texto">{mensaje.contenido}</div>
-          </div>
-        )}
-        <div className="mensaje-fecha">{horaTexto}</div>
-      </div>
-    </>
-  );
-});
 
 export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
   const [conversacion, setConversacion] = useState([]);
   const [nuevoMensaje, setNuevoMensaje] = useState("");
   const [minimizado, setMinimizado] = useState(false);
   const [nombreUsuario, setNombreUsuario] = useState("");
-  const [loadingOlder, setLoadingOlder] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [page, setPage] = useState(0);
-  const [cargando, setCargando] = useState(false);
-  const inicialCargado = useRef(false);
-
-  const imagenPerfilUsuario = useProfileImage(usuarioActualId);
-  const imagenPerfilOtroUsuario = useProfileImage(usuarioId);
-
+  const [imagenPerfilUsuario, setImagenPerfilUsuario] = useState(null);
+  const [imagenPerfilOtroUsuario, setImagenPerfilOtroUsuario] = useState(null);
+  const popupRef = useRef(null);
+  const mensajesEndRef = useRef(null); // Nueva referencia para el último mensaje
+  const [dragging, setDragging] = useState(false); // Estado para controlar el arrastre
+  const [offset, setOffset] = useState({ x: 0, y: 0 }); // Estado para almacenar el desplazamiento inicial
   const stompClientRef = useRef(null);
-  const messageBufferRef = useRef([]);
-  const virtuosoRef = useRef(null);
 
-  // ===== Obtener nombre usuario =====
   useEffect(() => {
-    let cancel = false;
-    (async () => {
-      try {
-        const resp = await axios.get(
-          `https://devocionales-app-backend.onrender.com/usuario/perfil/${usuarioId}`
-        );
-        if (!cancel) setNombreUsuario(resp.data.nombre || "");
-      } catch {
-        if (!cancel) setNombreUsuario("");
-      }
-    })();
-    return () => {
-      cancel = true;
-    };
-  }, [usuarioId]);
-
-  // ===== Fetch mensajes =====
-  const fetchPage = useCallback(async (pagina) => {
-    if (cargando) return [];
-    setCargando(true);
-    try {
-      const resp = await axios.get(
-        "https://devocionales-app-backend.onrender.com/mensajes/conversacion",
-        {
-          params: {
-            emisorId: usuarioActualId,
-            receptorId: usuarioId,
-            page: pagina,
-            size: PAGE_SIZE,
-          },
-        }
-      );
-      return resp.data || [];
-    } catch {
-      return [];
-    } finally {
-      setCargando(false);
-    }
-  }, [usuarioActualId, usuarioId, cargando]);
-
-  const loadInitial = useCallback(async () => {
-    const data = await fetchPage(0);
-    setConversacion(data);
-    setPage(1);
-    setHasMore(data.length === PAGE_SIZE);
-  }, [fetchPage]);
-
-  // Evita doble carga inicial
-  useEffect(() => {
-    if (!usuarioId || !usuarioActualId) return;
-    if (inicialCargado.current) return;
-    inicialCargado.current = true;
-
-    setConversacion([]);
-    setPage(0);
-    setHasMore(true);
-    loadInitial();
-  }, [usuarioId, usuarioActualId, loadInitial]);
-
-  const loadOlder = useCallback(async () => {
-    if (!hasMore || loadingOlder) return;
-    setLoadingOlder(true);
-    try {
-      const data = await fetchPage(page);
-      if (data.length > 0) {
-        setConversacion((prev) => [...data, ...prev]);
-        setPage((p) => p + 1);
-      } else {
-        setHasMore(false);
-      }
-    } finally {
-      setCargando(false);
-      setLoadingOlder(false);
-    }
-  }, [fetchPage, hasMore, loadingOlder, page]);
-
-  // ===== WebSocket =====
-  useEffect(() => {
-    const socket = new SockJS(
-      `https://devocionales-app-backend.onrender.com/ws-notifications?userId=${usuarioActualId}`
-    );
+    const socket = new SockJS(`https://devocionales-app-backend.onrender.com/ws-notifications?userId=${usuarioActualId}`);
     const stompClient = new Client({
       webSocketFactory: () => socket,
       reconnectDelay: 5000,
       onConnect: () => {
-        stompClient.subscribe("/user/queue/messages", (message) => {
-          const body =
-            message.isBinaryBody && message._binaryBody
-              ? new TextDecoder().decode(message._binaryBody)
-              : message.body;
+        console.log("WebSocket conectado");
+
+        stompClient.subscribe(`/user/queue/messages`, (message) => {
+          let body = message.body;
+
+          if (message.isBinaryBody && message._binaryBody) {
+            body = new TextDecoder().decode(message._binaryBody);
+          }
+
           const nuevo = JSON.parse(body);
+          console.log("✅ Mensaje parseado:", nuevo);
 
-          const pertenece =
-            (nuevo.emisor.idUsuario === Number(usuarioId) &&
-              nuevo.receptor.idUsuario === Number(usuarioActualId)) ||
-            (nuevo.emisor.idUsuario === Number(usuarioActualId) &&
-              nuevo.receptor.idUsuario === Number(usuarioId));
+          // Convertir ambos a número explícitamente
+          const receptorId = Number(usuarioId);
+          const emisorId = Number(usuarioActualId);
 
-          if (pertenece) messageBufferRef.current.push(nuevo);
+          if (
+            (nuevo.emisor.idUsuario === receptorId &&
+              nuevo.receptor.idUsuario === emisorId) ||
+            (nuevo.emisor.idUsuario === emisorId &&
+              nuevo.receptor.idUsuario === receptorId)
+          ) {
+            console.log("🎯 Mensaje pertenece a la conversación activa");
+            setConversacion((prev) => [...prev, nuevo]);
+          } else {
+            console.log("⛔ Mensaje NO corresponde a esta conversación");
+          }
         });
+      },
+      onStompError: (frame) => {
+        console.error("Error en STOMP:", frame);
       },
     });
 
     stompClient.activate();
     stompClientRef.current = stompClient;
-    return () => stompClient.deactivate();
+
+    return () => {
+      stompClient.deactivate();
+    };
   }, [usuarioId, usuarioActualId]);
 
-  // ===== Flush buffer =====
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (messageBufferRef.current.length > 0) {
-        const batch = messageBufferRef.current;
-        messageBufferRef.current = [];
-        setConversacion((prev) => [...prev, ...batch]);
-        setTimeout(() => {
-          if (virtuosoRef.current) {
-            virtuosoRef.current.scrollToIndex({
-              index: conversacion.length + batch.length - 1,
-            });
+    const obtenerConversacion = async () => {
+      try {
+        const response = await axios.get("https://devocionales-app-backend.onrender.com/mensajes/conversacion", {
+          params: {
+            emisorId: usuarioActualId,
+            receptorId: usuarioId,
+          },
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
           }
-        }, 0);
+        });
+        setConversacion(response.data);
+      } catch (error) {
+        console.error("Error al obtener la conversación:", error);
       }
-    }, FLUSH_INTERVAL_MS);
-    return () => clearInterval(interval);
-  }, [conversacion.length]);
+    };
 
-  // ===== Enviar mensaje =====
+    const obtenerNombreUsuario = async () => {
+      try {
+        const response = await axios.get(
+          `https://devocionales-app-backend.onrender.com/usuario/perfil/${usuarioId}`
+        );
+        setNombreUsuario(response.data.nombre);
+      } catch (error) {
+        console.error("Error al obtener el nombre del usuario:", error);
+      }
+    };
+
+    const cargarImagenPerfil = async (idUsuario, setImagenPerfil) => {
+      try {
+        const response = await axios.get(
+          `https://devocionales-app-backend.onrender.com/imagen/perfil/${idUsuario}`,
+          { responseType: "arraybuffer" }
+        );
+        const blob = new Blob([response.data], { type: "image/jpeg" });
+        const url = URL.createObjectURL(blob);
+        setImagenPerfil(url);
+      } catch (error) {
+        console.error("Error al cargar la imagen de perfil:", error);
+      }
+    };
+
+    obtenerConversacion();
+    obtenerNombreUsuario();
+    cargarImagenPerfil(usuarioActualId, setImagenPerfilUsuario);
+    cargarImagenPerfil(usuarioId, setImagenPerfilOtroUsuario);
+  }, [usuarioId, usuarioActualId]);
+
+  useEffect(() => {
+    if (mensajesEndRef.current) {
+      mensajesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [conversacion, minimizado]); // Ejecuta el scroll cuando cambia la conversación o se maximiza la ventana
+
   const enviarMensaje = () => {
-    if (!nuevoMensaje.trim()) return;
-    const tempMensaje = {
+    if (nuevoMensaje.trim() === "") return;
+  
+    const mensaje = {
       emisor: { idUsuario: usuarioActualId },
       receptor: { idUsuario: usuarioId },
       contenido: nuevoMensaje,
       fechaEnvio: new Date().toISOString(),
-      id: Date.now(),
+      id: Date.now() // temporal
     };
-    setConversacion((prev) => [...prev, tempMensaje]);
-    setNuevoMensaje("");
-
-    if (stompClientRef.current?.connected) {
+  
+    if (stompClientRef.current && stompClientRef.current.connected) {
       stompClientRef.current.publish({
         destination: "/app/chat.send",
         body: JSON.stringify({
           emisorId: usuarioActualId,
           receptorId: usuarioId,
-          contenido: tempMensaje.contenido,
+          contenido: nuevoMensaje,
         }),
+      });
+  
+      // 🟢 Agregar inmediatamente a la conversación
+      setConversacion((prev) => [...prev, mensaje]);
+  
+      setNuevoMensaje("");
+    } else {
+      console.error("STOMP no está conectado");
+    }
+  };
+
+  const toggleMinimizado = () => {
+    setMinimizado(!minimizado);
+    if (minimizado && mensajesEndRef.current) {
+      setTimeout(() => {
+        mensajesEndRef.current.scrollIntoView({ behavior: "smooth" });
+      }, 0);
+    }
+  };
+
+  const handleMouseDown = (e) => {
+    if (e.target.closest(".popup-header")) {
+      setDragging(true);
+      const rect = popupRef.current.getBoundingClientRect();
+      setOffset({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
       });
     }
   };
 
+  const handleMouseMove = (e) => {
+    if (dragging) {
+      const x = e.clientX - offset.x;
+      const y = e.clientY - offset.y;
+      popupRef.current.style.left = `${x}px`;
+      popupRef.current.style.top = `${y}px`;
+    }
+  };
+
+  const handleMouseUp = () => {
+    setDragging(false);
+  };
+
+  useEffect(() => {
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [dragging, offset]);
+
+  useEffect(() => {
+    // Inicializar la posición del popup en la esquina inferior derecha de la ventana
+    const ajustarPosicionInicial = () => {
+      if (popupRef.current) {
+        const { innerWidth, innerHeight } = window;
+        const { clientWidth, clientHeight } = popupRef.current;
+        popupRef.current.style.left = `${innerWidth - clientWidth - 17}px`;
+        popupRef.current.style.top = `${innerHeight - clientHeight - 60}px`;
+      }
+    };
+    ajustarPosicionInicial();
+    window.addEventListener("resize", ajustarPosicionInicial);
+    return () => window.removeEventListener("resize", ajustarPosicionInicial);
+  }, []);
+
   return (
-    <div className={`mensajeria-popup ${minimizado ? "minimizado" : ""}`}>
-      <div className="popup-header">
+    <div
+      className={`mensajeria-popup ${minimizado ? "minimizado" : ""}`}
+      ref={popupRef}
+      style={{ position: 'fixed', left: '20px', top: '20px' }} // Establece una posición inicial
+    >
+      <div className="popup-header" onMouseDown={handleMouseDown}>
         <span>{nombreUsuario || "Seleccione una conversación"}</span>
         <div className="popup-buttons">
-          <button onClick={() => setMinimizado((m) => !m)}>
+          <button onClick={toggleMinimizado}>
             {minimizado ? "▢" : "—"}
           </button>
           <button onClick={onClose}>✕</button>
@@ -248,56 +240,66 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
       </div>
       {!minimizado && (
         <div className="popup-body">
-          {loadingOlder && <div className="loader-fixed-top">Cargando mensajes...</div>}
-          <div className="mensajes-container" style={{ position: "relative", height: "400px" }}>
-            <Virtuoso
-              ref={virtuosoRef}
-              firstItemIndex={0}
-              style={{ height: "100%" }}
-              className="mensajes"
-              data={conversacion || []}
-              followOutput="auto"
-              atTopStateChange={(atTop) => {
-                if (atTop) loadOlder();
-              }}
-              initialTopMostItemIndex={
-                conversacion.length > 0 ? conversacion.length - 1 : 0
-              }
-              itemContent={(index, mensaje) => {
-                const fechaForm = formatFechaEnvio(mensaje.fechaEnvio);
-                const mostrarFecha =
-                  index === 0 ||
-                  formatFechaEnvio(conversacion[index - 1]?.fechaEnvio).fecha !== fechaForm.fecha;
-                const esActual =
-                  Number(mensaje.emisor.idUsuario) === Number(usuarioActualId);
-                return (
-                  <MensajeItem
-                    key={mensaje.id}
-                    mensaje={mensaje}
-                    esActual={esActual}
-                    imagenUsuario={imagenPerfilUsuario}
-                    imagenOtro={imagenPerfilOtroUsuario}
-                    mostrarFecha={mostrarFecha}
-                    fechaTexto={fechaForm.fecha}
-                    horaTexto={fechaForm.hora}
-                  />
-                );
-              }}
-            />
-          </div>
+          <div className="mensajes">
+            {conversacion.map((mensaje, index) => {
+              const fechaFormateada = formatFechaEnvio(mensaje.fechaEnvio);
+              const mostrarFecha =
+                index === 0 ||
+                formatFechaEnvio(conversacion[index - 1].fechaEnvio).fecha !==
+                fechaFormateada.fecha;
 
-          <div className="input-row">
-            <input
-              type="text"
-              value={nuevoMensaje}
-              onChange={(e) => setNuevoMensaje(e.target.value)}
-              placeholder="Escribe un mensaje..."
-              onKeyDown={(e) => {
-                if (e.key === "Enter") enviarMensaje();
-              }}
-            />
-            <button onClick={enviarMensaje}>Enviar</button>
+              return (
+                <React.Fragment key={mensaje.id}>
+                  {mostrarFecha && (
+                    <div className="mensaje-fecha-separador">
+                      {fechaFormateada.fecha}
+                    </div>
+                  )}
+                  <div
+                    className={`mensaje ${mensaje.emisor.idUsuario == usuarioActualId
+                      ? "enviado"
+                      : "recibido"
+                      }`}
+                  >
+                    {mensaje.emisor.idUsuario == usuarioActualId ? (
+                      <div className="mensaje-contenido enviado">
+                        <div className="mensaje-texto">
+                          {mensaje.contenido}
+                        </div>
+                        <img
+                          src={imagenPerfilUsuario || defaultImage}
+                          alt="Tu Imagen de Perfil"
+                          className="profile-picture profile-picture-usuario"
+                        />
+                      </div>
+                    ) : (
+                      <div className="mensaje-contenido recibido">
+                        <img
+                          src={imagenPerfilOtroUsuario}
+                          alt="Imagen de Perfil del Otro Usuario"
+                          className="profile-picture profile-picture-otro"
+                        />
+                        <div className="mensaje-texto">
+                          {mensaje.contenido}
+                        </div>
+                      </div>
+                    )}
+                    <div className="mensaje-fecha">
+                      {fechaFormateada.hora}
+                    </div>
+                  </div>
+                </React.Fragment>
+              );
+            })}
+            <div ref={mensajesEndRef} /> {/* Referencia al final de la conversación */}
           </div>
+          <input
+            type="text"
+            value={nuevoMensaje}
+            onChange={(e) => setNuevoMensaje(e.target.value)}
+            placeholder="Escribe un mensaje..."
+          />
+          <button onClick={enviarMensaje}>Enviar</button>
         </div>
       )}
     </div>
