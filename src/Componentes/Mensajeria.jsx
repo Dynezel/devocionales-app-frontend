@@ -283,63 +283,38 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
 
       {!minimizado && (
         <div className="popup-body">
-          <div className="mensajes-container" style={{ position: "relative", height: "400px" }}>
-            {loadingOlder && (
-              <div
-                className="mensaje-fecha-separador"
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  zIndex: 10,
-                }}
-              >
-                Cargando mensajes antiguos...
-              </div>
-            )}
-
-            <Virtuoso
-              ref={virtuosoRef}
-              className="mensajes"
-              style={{ height: "100%", paddingTop: loadingOlder ? "25px" : "0" }}
-              data={conversacion}
-              followOutput="auto"
-              atTopStateChange={async (atTop) => {
-                if (atTop && hasMore && !loadingOlder) {
-                  await loadOlder();
-                  if (virtuosoRef.current) {
-                    virtuosoRef.current.scrollToIndex({
-                      index: PAGE_SIZE,
-                      align: "start",
-                      behavior: "auto",
-                    });
-                  }
-                }
-              }}
-              itemContent={(index, mensaje) => {
-                const fechaForm = formatFechaEnvio(mensaje.fechaEnvio);
-                const mostrarFecha =
-                  index === 0 ||
-                  formatFechaEnvio(conversacion[index - 1]?.fechaEnvio).fecha !==
+          {loadingOlder && (
+            <div className="mensaje-fecha-separador">Cargando mensajes antiguos...</div>
+          )}
+          <Virtuoso
+            ref={virtuosoRef}
+            className="mensajes"
+            style={{ height: "400px" }}
+            data={conversacion}
+            startReached={loadOlder}
+            followOutput="auto"
+            itemContent={(index, mensaje) => {
+              const fechaForm = formatFechaEnvio(mensaje.fechaEnvio);
+              const mostrarFecha =
+                index === 0 ||
+                formatFechaEnvio(conversacion[index - 1]?.fechaEnvio).fecha !==
                   fechaForm.fecha;
-                const esActual = Number(mensaje.emisor.idUsuario) === Number(usuarioActualId);
+              const esActual = Number(mensaje.emisor.idUsuario) === Number(usuarioActualId);
 
-                return (
-                  <MensajeItem
-                    key={mensaje.id}
-                    mensaje={mensaje}
-                    esActual={esActual}
-                    imagenUsuario={imagenPerfilUsuario}
-                    imagenOtro={imagenPerfilOtroUsuario}
-                    mostrarFecha={mostrarFecha}
-                    fechaTexto={fechaForm.fecha}
-                    horaTexto={fechaForm.hora}
-                  />
-                );
-              }}
-            />
-          </div>
+              return (
+                <MensajeItem
+                  key={mensaje.id}
+                  mensaje={mensaje}
+                  esActual={esActual}
+                  imagenUsuario={imagenPerfilUsuario}
+                  imagenOtro={imagenPerfilOtroUsuario}
+                  mostrarFecha={mostrarFecha}
+                  fechaTexto={fechaForm.fecha}
+                  horaTexto={fechaForm.hora}
+                />
+              );
+            }}
+          />
 
           <div className="input-row">
             <input
