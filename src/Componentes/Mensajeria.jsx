@@ -248,8 +248,8 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
       </div>
       {!minimizado && (
         <div className="popup-body">
+          {loadingOlder && <div className="loader-fixed-top">Cargando mensajes...</div>}
           <div className="mensajes-container" style={{ position: "relative", height: "400px" }}>
-            {loadingOlder && <div className="loader-fixed-top">Cargando mensajes...</div>}
             <Virtuoso
               ref={virtuosoRef}
               firstItemIndex={0}
