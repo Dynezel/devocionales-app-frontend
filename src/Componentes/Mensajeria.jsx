@@ -138,30 +138,21 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
   const loadOlder = useCallback(async () => {
     if (!hasMore || loadingOlder) return;
     setLoadingOlder(true);
+  
     try {
       const data = await fetchPage(page);
       if (data.length > 0) {
-        setConversacion((prev) => [...data, ...prev]);
-        setPage((p) => p + 1);
-
-        // Ajustamos scroll para que no salte
-        if (virtuosoRef.current) {
-          virtuosoRef.current.scrollToIndex({
-            index: data.length,
-            align: "start",
-            behavior: "auto",
-          });
-        }
+        setConversacion(prev => [...data, ...prev]);
+        setPage(p => p + 1);
       } else {
         setHasMore(false);
       }
     } catch (e) {
-      console.error("Error al cargar mensajes antiguos:", e);
+      console.error("Error cargando mensajes antiguos:", e);
     } finally {
       setLoadingOlder(false);
     }
   }, [fetchPage, hasMore, loadingOlder, page]);
-
   // ===== WebSocket + buffer =====
   useEffect(() => {
     const socket = new SockJS(
@@ -297,11 +288,12 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
             <Virtuoso
               ref={virtuosoRef}
               className="mensajes"
-              style={{ height: "100%", paddingTop: loadingOlder ? "25px" : "0" }}
+              style={{ height: "100%" }}
               data={conversacion}
               followOutput="auto"
               atTopStateChange={(atTop) => {
                 if (atTop && hasMore && !loadingOlder) {
+                  // Llamamos a loadOlder, que ya maneja async internamente
                   loadOlder();
                 }
               }}
@@ -309,8 +301,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
                 const fechaForm = formatFechaEnvio(mensaje.fechaEnvio);
                 const mostrarFecha =
                   index === 0 ||
-                  formatFechaEnvio(conversacion[index - 1]?.fechaEnvio).fecha !==
-                  fechaForm.fecha;
+                  formatFechaEnvio(conversacion[index - 1]?.fechaEnvio).fecha !== fechaForm.fecha;
                 const esActual = Number(mensaje.emisor.idUsuario) === Number(usuarioActualId);
 
                 return (
