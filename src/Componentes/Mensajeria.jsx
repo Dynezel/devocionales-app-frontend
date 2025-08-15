@@ -284,25 +284,11 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
       {!minimizado && (
         <div className="popup-body">
           <div className="mensajes-container" style={{ position: "relative", height: "400px" }}>
-            {loadingOlder && (
-              <div
-                className="mensaje-fecha-separador"
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  zIndex: 10,
-                }}
-              >
-                Cargando mensajes antiguos...
-              </div>
-            )}
-
+          {loadingOlder && ( <div className="mensaje-fecha-separador">Cargando mensajes...</div> )}
             <Virtuoso
               ref={virtuosoRef}
               className="mensajes"
-              style={{ height: "100%", paddingTop: loadingOlder ? "25px" : "0" }}
+              style={{ height: "100%", paddingTop: loadingOlder ? "0px" : "0" }}
               data={conversacion}
               followOutput="auto"
               atTopStateChange={async (atTop) => {
