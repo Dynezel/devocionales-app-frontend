@@ -71,6 +71,8 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
+  const [cargando, setCargando] = useState(false);
+  const inicialCargado = useRef(false);
 
   const imagenPerfilUsuario = useProfileImage(usuarioActualId);
   const imagenPerfilOtroUsuario = useProfileImage(usuarioId);
@@ -98,7 +100,11 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
   }, [usuarioId]);
 
   // ===== Fetch mensajes =====
-  const fetchPage = useCallback(
+  const fetchPage = useCallback(async (pagina) => {
+    
+    if (cargando) return;
+    setCargando(true);
+
     async (pagina) => {
       const resp = await axios.get(
         "https://devocionales-app-backend.onrender.com/mensajes/conversacion",
@@ -114,7 +120,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
       return resp.data || [];
     },
     [usuarioActualId, usuarioId]
-  );
+  });
 
   const loadInitial = useCallback(async () => {
     const data = await fetchPage(0);
@@ -144,6 +150,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
         setHasMore(false);
       }
     } finally {
+      setCargando(false);
       setLoadingOlder(false);
     }
   }, [fetchPage, hasMore, loadingOlder, page]);
