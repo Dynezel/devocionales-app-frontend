@@ -101,40 +101,39 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
   }, [usuarioId]);
 
   // ===== Fetch mensajes =====
-  const fetchPage = useCallback(
-    async (pagina) => {
-      const resp = await axios.get(
-        "https://devocionales-app-backend.onrender.com/mensajes/conversacion",
+  const fetchMensajes = useCallback(async (pagina) => {
+    if (!hasMore && pagina !== 0) return;
+
+    setIsLoading(true);
+    try {
+      const { data } = await axios.get(
+        `https://devocionales-app-backend.onrender.com/mensajes/conversacion`,
         {
-          params: {
-            emisorId: usuarioActualId,
-            receptorId: usuarioId,
-            page: pagina,
-            size: PAGE_SIZE,
-          },
+          params: { emisorId, receptorId, page: pagina, size: 20 },
         }
       );
-      return resp.data || [];
-    },
-    [usuarioActualId, usuarioId]
-  );
 
-  // ===== Carga inicial (solo una vez por conversación) =====
-  useEffect(() => {
-    if (usuarioId && usuarioActualId && !initialLoaded) {
-      setConversacion([]);
-      setPage(0);
-      setHasMore(true);
-      setInitialLoaded(true);
+      if (pagina === 0) {
+        setMensajes(data.content);
+      } else {
+        setMensajes((prev) => [...data.content, ...prev]);
+      }
 
-      (async () => {
-        const data = await fetchPage(0);
-        setConversacion(data);
-        setPage(1);
-        setHasMore(data.length === PAGE_SIZE);
-      })();
+      setHasMore(!data.last); // El backend indica si es la última página
+      setPage(pagina);
+    } catch (error) {
+      console.error("Error cargando mensajes:", error);
+    } finally {
+      setIsLoading(false);
     }
-  }, [usuarioId, usuarioActualId, fetchPage, initialLoaded]);
+  }, [emisorId, receptorId, hasMore]);
+
+  useEffect(() => {
+    if (!initialLoadDone.current) {
+      fetchMensajes(0);
+      initialLoadDone.current = true;
+    }
+  }, [fetchMensajes]);
 
   // ===== Cargar mensajes más antiguos =====
   const loadOlder = useCallback(async () => {
@@ -236,40 +235,24 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
 
       {!minimizado && (
         <div className="popup-body">
+          {isLoading && (
+            <div className="loader-fixed-top">
+              Cargando Mensajes...
+            </div>
+          )}
           <Virtuoso
             ref={virtuosoRef}
-            style={{ height: "400px" }}
-            className="mensajes"
-            data={conversacion}
-            followOutput="auto"
-            startReached={loadOlder}
-            components={{
-              Header: () =>
-                loadingOlder ? (
-                  <div className="loader-fixed-top">Cargando mensajes...</div>
-                ) : null,
+            style={{ height: "100%" }}
+            data={mensajes}
+            firstItemIndex={Math.max(0, mensajes.length - 1)}
+            startReached={() => {
+              if (!isLoading && hasMore) {
+                fetchMensajes(page + 1);
+              }
             }}
-            itemContent={(index, mensaje) => {
-              const fechaForm = formatFechaEnvio(mensaje.fechaEnvio);
-              const mostrarFecha =
-                index === 0 ||
-                formatFechaEnvio(conversacion[index - 1]?.fechaEnvio).fecha !==
-                  fechaForm.fecha;
-              const esActual =
-                Number(mensaje.emisor.idUsuario) === Number(usuarioActualId);
-              return (
-                <MensajeItem
-                  key={mensaje.id}
-                  mensaje={mensaje}
-                  esActual={esActual}
-                  imagenUsuario={imagenPerfilUsuario}
-                  imagenOtro={imagenPerfilOtroUsuario}
-                  mostrarFecha={mostrarFecha}
-                  fechaTexto={fechaForm.fecha}
-                  horaTexto={fechaForm.hora}
-                />
-              );
-            }}
+            itemContent={(index, mensaje) => (
+              <div style={{ padding: "10px" }}>{mensaje.texto}</div>
+            )}
           />
 
           <div className="input-row">
@@ -285,7 +268,8 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
             <button onClick={enviarMensaje}>Enviar</button>
           </div>
         </div>
-      )}
-    </div>
+      )
+      }
+    </div >
   );
 }
