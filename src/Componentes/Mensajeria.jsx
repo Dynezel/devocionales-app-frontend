@@ -76,8 +76,6 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
   const imagenPerfilOtroUsuario = useProfileImage(usuarioId);
 
   const popupRef = useRef(null);
-  const draggingRef = useRef(false);
-  const offsetRef = useRef({ x: 0, y: 0 });
   const stompClientRef = useRef(null);
   const messageBufferRef = useRef([]);
   const virtuosoRef = useRef(null);
@@ -85,21 +83,20 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
   // ===== Obtener nombre usuario =====
   useEffect(() => {
     let cancel = false;
-    const fetchNombre = async () => {
+    (async () => {
       try {
         const resp = await axios.get(
           `https://devocionales-app-backend.onrender.com/usuario/perfil/${usuarioId}`
         );
         if (!cancel) setNombreUsuario(resp.data.nombre || "");
-      } catch (e) {
+      } catch {
         if (!cancel) setNombreUsuario("");
       }
-    };
-    if (usuarioId) fetchNombre();
+    })();
     return () => { cancel = true; };
   }, [usuarioId]);
 
-  // ===== Carga inicial de conversación =====
+  // ===== Fetch mensajes =====
   const fetchPage = useCallback(
     async (pagina) => {
       const resp = await axios.get(
@@ -134,7 +131,6 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
     }
   }, [usuarioId, usuarioActualId, loadInitial]);
 
-  // ===== Cargar mensajes antiguos =====
   const loadOlder = useCallback(async () => {
     if (!hasMore || loadingOlder) return;
     setLoadingOlder(true);
@@ -146,14 +142,12 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
       } else {
         setHasMore(false);
       }
-    } catch (e) {
-      console.error("Error al cargar mensajes antiguos:", e);
     } finally {
       setLoadingOlder(false);
     }
   }, [fetchPage, hasMore, loadingOlder, page]);
 
-  // ===== WebSocket + buffer =====
+  // ===== WebSocket =====
   useEffect(() => {
     const socket = new SockJS(
       `https://devocionales-app-backend.onrender.com/ws-notifications?userId=${usuarioActualId}`
@@ -168,18 +162,15 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
             : message.body;
           const nuevo = JSON.parse(body);
 
-          const receptorId = Number(usuarioId);
-          const emisorId = Number(usuarioActualId);
           const pertenece =
-            (nuevo.emisor.idUsuario === receptorId &&
-              nuevo.receptor.idUsuario === emisorId) ||
-            (nuevo.emisor.idUsuario === emisorId &&
-              nuevo.receptor.idUsuario === receptorId);
+            (nuevo.emisor.idUsuario === Number(usuarioId) &&
+              nuevo.receptor.idUsuario === Number(usuarioActualId)) ||
+            (nuevo.emisor.idUsuario === Number(usuarioActualId) &&
+              nuevo.receptor.idUsuario === Number(usuarioId));
 
           if (pertenece) messageBufferRef.current.push(nuevo);
         });
       },
-      onStompError: (frame) => console.error("Error STOMP:", frame),
     });
 
     stompClient.activate();
@@ -187,7 +178,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
     return () => stompClient.deactivate();
   }, [usuarioId, usuarioActualId]);
 
-  // ===== Vaciar buffer =====
+  // ===== Flush buffer =====
   useEffect(() => {
     const interval = setInterval(() => {
       if (messageBufferRef.current.length > 0) {
@@ -202,7 +193,6 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
   // ===== Enviar mensaje =====
   const enviarMensaje = () => {
     if (!nuevoMensaje.trim()) return;
-
     const tempMensaje = {
       emisor: { idUsuario: usuarioActualId },
       receptor: { idUsuario: usuarioId },
@@ -210,7 +200,6 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
       fechaEnvio: new Date().toISOString(),
       id: Date.now(),
     };
-
     setConversacion((prev) => [...prev, tempMensaje]);
     setNuevoMensaje("");
 
@@ -226,57 +215,14 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
     }
   };
 
-  // ===== Minimizar y drag =====
-  const toggleMinimizado = () => setMinimizado((m) => !m);
-
-  const handleMouseDown = (e) => {
-    if (e.target.closest(".popup-header")) {
-      draggingRef.current = true;
-      const rect = popupRef.current.getBoundingClientRect();
-      offsetRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-    }
-  };
-  const handleMouseMove = (e) => {
-    if (draggingRef.current && popupRef.current) {
-      popupRef.current.style.left = `${e.clientX - offsetRef.current.x}px`;
-      popupRef.current.style.top = `${e.clientY - offsetRef.current.y}px`;
-    }
-  };
-  const handleMouseUp = () => { draggingRef.current = false; };
-
-  useEffect(() => {
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, []);
-
-  // Posición inicial
-  useEffect(() => {
-    const ajustarPosicion = () => {
-      if (popupRef.current) {
-        const { innerWidth, innerHeight } = window;
-        const { clientWidth, clientHeight } = popupRef.current;
-        popupRef.current.style.left = `${innerWidth - clientWidth - 17}px`;
-        popupRef.current.style.top = `${innerHeight - clientHeight - 60}px`;
-      }
-    };
-    ajustarPosicion();
-    window.addEventListener("resize", ajustarPosicion);
-    return () => window.removeEventListener("resize", ajustarPosicion);
-  }, []);
-
   return (
     <div
       className={`mensajeria-popup ${minimizado ? "minimizado" : ""}`}
-      ref={popupRef}
-    >
-      <div className="popup-header" onMouseDown={handleMouseDown}>
+      ref={popupRef}>
+      <div className="popup-header">
         <span>{nombreUsuario || "Seleccione una conversación"}</span>
         <div className="popup-buttons">
-          <button onClick={toggleMinimizado}>{minimizado ? "▢" : "—"}</button>
+          <button onClick={() => setMinimizado((m) => !m)}>{minimizado ? "▢" : "—"}</button>
           <button onClick={onClose}>✕</button>
         </div>
       </div>
@@ -284,15 +230,20 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
       {!minimizado && (
         <div className="popup-body">
           <div className="mensajes-container" style={{ position: "relative", height: "400px" }}>
-            {loadingOlder && (<div className="mensaje-fecha-separador">Cargando mensajes ...</div>)}
+            {/* Loader fijo */}
+            {loadingOlder && (
+              <div className="loader-fixed-top">
+                Cargando mensajes...
+              </div>
+            )}
+
             <Virtuoso
               ref={virtuosoRef}
-              className="mensajes"
               style={{ height: "100%" }}
               data={conversacion}
               followOutput="auto"
               atTopStateChange={(atTop) => {
-                if (atTop) loadOlder(); // loadOlder ya bloquea con loadingOlder
+                if (atTop) loadOlder();
               }}
               itemContent={(index, mensaje) => {
                 const fechaForm = formatFechaEnvio(mensaje.fechaEnvio);
@@ -300,7 +251,6 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
                   index === 0 ||
                   formatFechaEnvio(conversacion[index - 1]?.fechaEnvio).fecha !== fechaForm.fecha;
                 const esActual = Number(mensaje.emisor.idUsuario) === Number(usuarioActualId);
-
                 return (
                   <MensajeItem
                     key={mensaje.id}
