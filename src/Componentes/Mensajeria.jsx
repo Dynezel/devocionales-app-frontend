@@ -181,7 +181,15 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
             ref={virtuosoRef}
             style={{ flex: 1 }}
             data={mensajes || []}
-            startReached={loadOlder}
+            startReached={async () => {
+              if (!isLoading && hasMore) {
+                const nuevos = await fetchMensajes(page + 1);
+                if (nuevos.length > 0 && virtuosoRef.current) {
+                  // Mantener scroll al cargar arriba
+                  virtuosoRef.current.scrollToIndex({ index: nuevos.length, align: "start" });
+                }
+              }
+            }}
             itemContent={(index, mensaje) => {
               const fechaForm = formatFechaEnvio(mensaje.fechaEnvio);
               const mostrarFecha =
