@@ -143,6 +143,15 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
       if (data.length > 0) {
         setConversacion((prev) => [...data, ...prev]);
         setPage((p) => p + 1);
+
+        // Ajustamos scroll para que no salte
+        if (virtuosoRef.current) {
+          virtuosoRef.current.scrollToIndex({
+            index: data.length,
+            align: "start",
+            behavior: "auto",
+          });
+        }
       } else {
         setHasMore(false);
       }
@@ -284,23 +293,16 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
       {!minimizado && (
         <div className="popup-body">
           <div className="mensajes-container" style={{ position: "relative", height: "400px" }}>
-          {loadingOlder && ( <div className="mensaje-fecha-separador">Cargando mensajes...</div> )}
+            {loadingOlder && (<div className="mensaje-fecha-separador">Cargando mensajes...</div>)}
             <Virtuoso
               ref={virtuosoRef}
               className="mensajes"
-              style={{ height: "100%", paddingTop: loadingOlder ? "0px" : "0" }}
+              style={{ height: "100%", paddingTop: loadingOlder ? "25px" : "0" }}
               data={conversacion}
               followOutput="auto"
-              atTopStateChange={async (atTop) => {
+              atTopStateChange={(atTop) => {
                 if (atTop && hasMore && !loadingOlder) {
-                  await loadOlder();
-                  if (virtuosoRef.current) {
-                    virtuosoRef.current.scrollToIndex({
-                      index: PAGE_SIZE,
-                      align: "start",
-                      behavior: "auto",
-                    });
-                  }
+                  loadOlder();
                 }
               }}
               itemContent={(index, mensaje) => {
