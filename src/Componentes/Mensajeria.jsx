@@ -19,60 +19,14 @@ const formatFechaEnvio = (fechaEnvio) => {
   };
 };
 
-const MensajeItem = React.memo(function MensajeItem({
-  mensaje,
-  esActual,
-  imagenUsuario,
-  imagenOtro,
-  mostrarFecha,
-  fechaTexto,
-  horaTexto,
-}) {
-  return (
-    <>
-      {mostrarFecha && (
-        <div className="mensaje-fecha-separador">{fechaTexto}</div>
-      )}
-      <div className={`mensaje ${esActual ? "enviado" : "recibido"}`}>
-        {esActual ? (
-          <div className="mensaje-contenido enviado">
-            <div className="mensaje-texto">{mensaje.contenido}</div>
-            <img
-              src={imagenUsuario}
-              alt="Tu Imagen de Perfil"
-              className="profile-picture profile-picture-usuario"
-              loading="lazy"
-              decoding="async"
-              referrerPolicy="no-referrer"
-            />
-          </div>
-        ) : (
-          <div className="mensaje-contenido recibido">
-            <img
-              src={imagenOtro}
-              alt="Imagen de Perfil del Otro Usuario"
-              className="profile-picture profile-picture-otro"
-              loading="lazy"
-              decoding="async"
-              referrerPolicy="no-referrer"
-            />
-            <div className="mensaje-texto">{mensaje.contenido}</div>
-          </div>
-        )}
-        <div className="mensaje-fecha">{horaTexto}</div>
-      </div>
-    </>
-  );
-});
-
 export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
   const [mensajes, setMensajes] = useState([]);
   const [nuevoMensaje, setNuevoMensaje] = useState("");
   const [minimizado, setMinimizado] = useState(false);
   const [nombreUsuario, setNombreUsuario] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
 
   const imagenPerfilUsuario = useProfileImage(usuarioActualId);
   const imagenPerfilOtroUsuario = useProfileImage(usuarioId);
@@ -82,7 +36,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
   const virtuosoRef = useRef(null);
   const initialLoadDone = useRef(false);
 
-  // ===== Obtener nombre usuario =====
+  // ===== Obtener nombre del usuario =====
   useEffect(() => {
     let cancel = false;
     (async () => {
@@ -100,7 +54,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
 
   // ===== Fetch mensajes =====
   const fetchMensajes = useCallback(async (pagina) => {
-    if (!hasMore && pagina !== 0) return [];
+    if (!hasMore && pagina !== 0) return;
 
     setIsLoading(true);
     try {
@@ -116,38 +70,28 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
         }
       );
 
-      const nuevosMensajes = data?.content || [];
-
       if (pagina === 0) {
-        setMensajes(nuevosMensajes);
+        setMensajes(data.content);
       } else {
-        setMensajes((prev) => [...nuevosMensajes, ...prev]);
+        setMensajes((prev) => [...data.content, ...prev]);
       }
 
-      setHasMore(!data?.last);
+      setHasMore(!data.last); // Backend indica si es la última página
       setPage(pagina);
-      return nuevosMensajes;
     } catch (error) {
       console.error("Error cargando mensajes:", error);
-      return [];
     } finally {
       setIsLoading(false);
     }
   }, [usuarioActualId, usuarioId, hasMore]);
 
-  // ===== Carga inicial =====
+  // ===== Carga inicial sin doble request =====
   useEffect(() => {
-    if (!initialLoadDone.current && usuarioId && usuarioActualId) {
+    if (!initialLoadDone.current) {
       fetchMensajes(0);
       initialLoadDone.current = true;
     }
-  }, [fetchMensajes, usuarioId, usuarioActualId]);
-
-  // ===== Cargar mensajes más antiguos =====
-  const loadOlder = useCallback(async () => {
-    if (!hasMore || isLoading) return;
-    await fetchMensajes(page + 1);
-  }, [fetchMensajes, hasMore, isLoading, page]);
+  }, [fetchMensajes]);
 
   // ===== WebSocket =====
   useEffect(() => {
@@ -181,7 +125,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
     return () => stompClient.deactivate();
   }, [usuarioId, usuarioActualId]);
 
-  // ===== Flush buffer de WebSocket =====
+  // ===== Flush buffer =====
   useEffect(() => {
     const interval = setInterval(() => {
       if (messageBufferRef.current.length > 0) {
@@ -231,8 +175,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
       </div>
 
       {!minimizado && (
-        <div className="popup-body" style={{ position: "relative", height: "400px" }}>
-          {/* Loader fijo */}
+        <div className="popup-body">
           {isLoading && (
             <div className="loader-fixed-top">
               Cargando Mensajes...
@@ -244,8 +187,17 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
             style={{ height: "100%" }}
             className="mensajes"
             data={mensajes || []}
+            firstItemIndex={0} // siempre 0, manejamos scroll manualmente
             followOutput="auto"
-            startReached={loadOlder}
+            startReached={async () => {
+              if (!isLoading && hasMore) {
+                const nuevos = await fetchMensajes(page + 1);
+                if (nuevos.length > 0 && virtuosoRef.current) {
+                  // Mantener scroll al cargar arriba
+                  virtuosoRef.current.scrollToIndex({ index: nuevos.length, align: "start" });
+                }
+              }
+            }}
             itemContent={(index, mensaje) => {
               const fechaForm = formatFechaEnvio(mensaje.fechaEnvio);
               const mostrarFecha =
@@ -266,14 +218,15 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
               );
             }}
           />
-
           <div className="input-row">
             <input
               type="text"
               value={nuevoMensaje}
               onChange={(e) => setNuevoMensaje(e.target.value)}
               placeholder="Escribe un mensaje..."
-              onKeyDown={(e) => { if (e.key === "Enter") enviarMensaje(); }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") enviarMensaje();
+              }}
             />
             <button onClick={enviarMensaje}>Enviar</button>
           </div>
