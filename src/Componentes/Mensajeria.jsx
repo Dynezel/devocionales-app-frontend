@@ -19,61 +19,14 @@ const formatFechaEnvio = (fechaEnvio) => {
   };
 };
 
-const MensajeItem = React.memo(function MensajeItem({
-  mensaje,
-  esActual,
-  imagenUsuario,
-  imagenOtro,
-  mostrarFecha,
-  fechaTexto,
-  horaTexto,
-}) {
-  return (
-    <>
-      {mostrarFecha && (
-        <div className="mensaje-fecha-separador">{fechaTexto}</div>
-      )}
-      <div className={`mensaje ${esActual ? "enviado" : "recibido"}`}>
-        {esActual ? (
-          <div className="mensaje-contenido enviado">
-            <div className="mensaje-texto">{mensaje.contenido}</div>
-            <img
-              src={imagenUsuario}
-              alt="Tu Imagen de Perfil"
-              className="profile-picture profile-picture-usuario"
-              loading="lazy"
-              decoding="async"
-              referrerPolicy="no-referrer"
-            />
-          </div>
-        ) : (
-          <div className="mensaje-contenido recibido">
-            <img
-              src={imagenOtro}
-              alt="Imagen de Perfil del Otro Usuario"
-              className="profile-picture profile-picture-otro"
-              loading="lazy"
-              decoding="async"
-              referrerPolicy="no-referrer"
-            />
-            <div className="mensaje-texto">{mensaje.contenido}</div>
-          </div>
-        )}
-        <div className="mensaje-fecha">{horaTexto}</div>
-      </div>
-    </>
-  );
-});
-
 export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
-  const [conversacion, setConversacion] = useState([]);
+  const [mensajes, setMensajes] = useState([]);
   const [nuevoMensaje, setNuevoMensaje] = useState("");
   const [minimizado, setMinimizado] = useState(false);
   const [nombreUsuario, setNombreUsuario] = useState("");
-  const [loadingOlder, setLoadingOlder] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
-  const [initialLoaded, setInitialLoaded] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const imagenPerfilUsuario = useProfileImage(usuarioActualId);
   const imagenPerfilOtroUsuario = useProfileImage(usuarioId);
@@ -81,8 +34,9 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
   const stompClientRef = useRef(null);
   const messageBufferRef = useRef([]);
   const virtuosoRef = useRef(null);
+  const initialLoadDone = useRef(false);
 
-  // ===== Obtener nombre usuario =====
+  // ===== Obtener nombre del usuario =====
   useEffect(() => {
     let cancel = false;
     (async () => {
@@ -95,9 +49,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
         if (!cancel) setNombreUsuario("");
       }
     })();
-    return () => {
-      cancel = true;
-    };
+    return () => { cancel = true; };
   }, [usuarioId]);
 
   // ===== Fetch mensajes =====
@@ -124,7 +76,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
         setMensajes((prev) => [...data.content, ...prev]);
       }
 
-      setHasMore(!data.last); // El backend indica si es la última página
+      setHasMore(!data.last); // Backend indica si es la última página
       setPage(pagina);
     } catch (error) {
       console.error("Error cargando mensajes:", error);
@@ -133,29 +85,13 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
     }
   }, [usuarioActualId, usuarioId, hasMore]);
 
+  // ===== Carga inicial sin doble request =====
   useEffect(() => {
     if (!initialLoadDone.current) {
       fetchMensajes(0);
       initialLoadDone.current = true;
     }
   }, [fetchMensajes]);
-
-  // ===== Cargar mensajes más antiguos =====
-  const loadOlder = useCallback(async () => {
-    if (!hasMore || loadingOlder) return;
-    setLoadingOlder(true);
-    try {
-      const data = await fetchPage(page);
-      if (data.length > 0) {
-        setConversacion((prev) => [...data, ...prev]);
-        setPage((p) => p + 1);
-      } else {
-        setHasMore(false);
-      }
-    } finally {
-      setLoadingOlder(false);
-    }
-  }, [fetchPage, hasMore, loadingOlder, page]);
 
   // ===== WebSocket =====
   useEffect(() => {
@@ -195,7 +131,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
       if (messageBufferRef.current.length > 0) {
         const batch = messageBufferRef.current;
         messageBufferRef.current = [];
-        setConversacion((prev) => [...prev, ...batch]);
+        setMensajes((prev) => [...prev, ...batch]);
       }
     }, FLUSH_INTERVAL_MS);
     return () => clearInterval(interval);
@@ -211,7 +147,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
       fechaEnvio: new Date().toISOString(),
       id: Date.now(),
     };
-    setConversacion((prev) => [...prev, tempMensaje]);
+    setMensajes((prev) => [...prev, tempMensaje]);
     setNuevoMensaje("");
 
     if (stompClientRef.current?.connected) {
@@ -245,8 +181,10 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
               Cargando Mensajes...
             </div>
           )}
+
           <Virtuoso
             ref={virtuosoRef}
+            className="mensajes"
             style={{ height: "100%" }}
             data={mensajes}
             firstItemIndex={Math.max(0, mensajes.length - 1)}
@@ -256,7 +194,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
               }
             }}
             itemContent={(index, mensaje) => (
-              <div style={{ padding: "10px" }}>{mensaje.texto}</div>
+              <div style={{ padding: "10px" }}>{mensaje.contenido}</div>
             )}
           />
 
@@ -273,8 +211,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
             <button onClick={enviarMensaje}>Enviar</button>
           </div>
         </div>
-      )
-      }
-    </div >
+      )}
+    </div>
   );
 }
