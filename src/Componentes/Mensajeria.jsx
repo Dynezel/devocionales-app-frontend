@@ -284,7 +284,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
       {!minimizado && (
         <div className="popup-body">
           <div className="mensajes-container" style={{ position: "relative", height: "400px" }}>
-            {loadingOlder && (<div className="mensaje-fecha-separador">Cargando mensajes...</div>)}
+          
             <Virtuoso
               ref={virtuosoRef}
               className="mensajes"
