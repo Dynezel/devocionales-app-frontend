@@ -236,10 +236,10 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
                 Cargando mensajes...
               </div>
             )}
-
             <Virtuoso
               ref={virtuosoRef}
               style={{ height: "100%" }}
+              className="mensajes"
               data={conversacion}
               followOutput="auto"
               atTopStateChange={(atTop) => {
