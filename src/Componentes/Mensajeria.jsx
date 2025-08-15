@@ -175,34 +175,17 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
       </div>
 
       {!minimizado && (
-        <div className="popup-body">
-          {isLoading && (
-            <div className="loader-fixed-top">
-              Cargando Mensajes...
-            </div>
-          )}
-
+        <div className="popup-body" style={{ display: "flex", flexDirection: "column", height: "400px" }}>
+          {isLoading && <div className="loader-fixed-top">Cargando Mensajes...</div>}
           <Virtuoso
             ref={virtuosoRef}
-            style={{ height: "100%" }}
-            className="mensajes"
+            style={{ flex: 1 }}
             data={mensajes || []}
-            firstItemIndex={0} // siempre 0, manejamos scroll manualmente
-            followOutput="auto"
-            startReached={async () => {
-              if (!isLoading && hasMore) {
-                const nuevos = await fetchMensajes(page + 1);
-                if (nuevos.length > 0 && virtuosoRef.current) {
-                  // Mantener scroll al cargar arriba
-                  virtuosoRef.current.scrollToIndex({ index: nuevos.length, align: "start" });
-                }
-              }
-            }}
+            startReached={loadOlder}
             itemContent={(index, mensaje) => {
               const fechaForm = formatFechaEnvio(mensaje.fechaEnvio);
               const mostrarFecha =
-                index === 0 ||
-                formatFechaEnvio(mensajes[index - 1]?.fechaEnvio).fecha !== fechaForm.fecha;
+                index === 0 || formatFechaEnvio(mensajes[index - 1]?.fechaEnvio).fecha !== fechaForm.fecha;
               const esActual = Number(mensaje.emisor.idUsuario) === Number(usuarioActualId);
               return (
                 <MensajeItem
@@ -224,9 +207,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
               value={nuevoMensaje}
               onChange={(e) => setNuevoMensaje(e.target.value)}
               placeholder="Escribe un mensaje..."
-              onKeyDown={(e) => {
-                if (e.key === "Enter") enviarMensaje();
-              }}
+              onKeyDown={(e) => { if (e.key === "Enter") enviarMensaje(); }}
             />
             <button onClick={enviarMensaje}>Enviar</button>
           </div>
