@@ -54,8 +54,8 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
 
   // ===== Fetch mensajes =====
   const fetchMensajes = useCallback(async (pagina) => {
-    if (!hasMore && pagina !== 0) return;
-
+    if (!hasMore && pagina !== 0) return [];
+  
     setIsLoading(true);
     try {
       const { data } = await axios.get(
@@ -69,17 +69,20 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
           },
         }
       );
-
+  
       if (pagina === 0) {
         setMensajes(data.content);
       } else {
         setMensajes((prev) => [...data.content, ...prev]);
       }
-
-      setHasMore(!data.last); // Backend indica si es la última página
+  
+      setHasMore(!data.last);
       setPage(pagina);
+  
+      return data.content; // <--- Retornar los mensajes cargados
     } catch (error) {
       console.error("Error cargando mensajes:", error);
+      return [];
     } finally {
       setIsLoading(false);
     }
