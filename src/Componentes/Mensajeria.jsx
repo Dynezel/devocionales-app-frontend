@@ -109,7 +109,12 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
       const { data } = await axios.get(
         `https://devocionales-app-backend.onrender.com/mensajes/conversacion`,
         {
-          params: { emisorId, receptorId, page: pagina, size: 20 },
+          params: {
+            emisorId: usuarioActualId,
+            receptorId: usuarioId,
+            page: pagina,
+            size: PAGE_SIZE,
+          },
         }
       );
 
@@ -126,7 +131,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
     } finally {
       setIsLoading(false);
     }
-  }, [emisorId, receptorId, hasMore]);
+  }, [usuarioActualId, usuarioId, hasMore]);
 
   useEffect(() => {
     if (!initialLoadDone.current) {
