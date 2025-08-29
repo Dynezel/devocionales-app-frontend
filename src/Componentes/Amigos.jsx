@@ -17,7 +17,7 @@ export default function Amigos({ usuarioId, usuarioActualId }) {
   const obtenerAmigos = async () => {
     try {
       const response = await axios.get(
-        `https://localhost:8080/amistades/${usuarioId}/amigos`
+        `https://devocionales-app-backend.onrender.com/amistades/${usuarioId}/amigos`
       );
       const listaAmigos = response.data || [];
       setAmigos(listaAmigos);
@@ -43,7 +43,7 @@ export default function Amigos({ usuarioId, usuarioActualId }) {
 
     try {
       await axios.post(
-        `https://localhost:8080/amistades/${usuarioActualId}/enviar-solicitud/${usuarioId}`
+        `https://devocionales-app-backend.onrender.com/amistades/${usuarioActualId}/enviar-solicitud/${usuarioId}`
       );
       setSolicitudEnviada(true);
     } catch (error) {
@@ -54,7 +54,7 @@ export default function Amigos({ usuarioId, usuarioActualId }) {
   const eliminarAmigo = async (amigoId) => {
     try {
       await axios.delete(
-        `https://localhost:8080/amistades/${usuarioId}/eliminar/${amigoId}`
+        `https://devocionales-app-backend.onrender.com/amistades/${usuarioId}/eliminar/${amigoId}`
       );
       setAmigos(prev => prev.filter(a => a.id !== amigoId));
       if (amigoId === usuarioActualId) setEsAmigo(false);
@@ -90,7 +90,7 @@ export default function Amigos({ usuarioId, usuarioActualId }) {
                   <Link to={`/usuario/perfil/${amigo.id}`}>
                     <button className="boton-amigos">
                       <img
-                        src={`https://localhost:8080/imagen/perfil/${amigo.id}`}
+                        src={`https://devocionales-app-backend.onrender.com/imagen/perfil/${amigo.id}`}
                         alt="Perfil"
                         onError={(e) => { e.target.onerror = null; e.target.src = defaultImage; }}
                       />

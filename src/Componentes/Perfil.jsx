@@ -26,7 +26,7 @@ export default function Perfil() {
     const fetchUser = async () => {
       try {
         const userResponse = await axios.get(
-          "https://localhost:8080/usuario/perfil",
+          "https://devocionales-app-backend.onrender.com/usuario/perfil",
           { withCredentials: true }
         );
         setUser(userResponse.data);
@@ -50,7 +50,7 @@ export default function Perfil() {
   const cargarImagenPerfil = async (idUsuario) => {
     try {
       const response = await axios.get(
-        `https://localhost:8080/imagen/perfil/${idUsuario}`,
+        `https://devocionales-app-backend.onrender.com/imagen/perfil/${idUsuario}`,
         { responseType: "arraybuffer", withCredentials: true }
       );
       const blob = new Blob([response.data], { type: "image/jpeg" });
@@ -65,7 +65,7 @@ export default function Perfil() {
   const cargarBanner = async (idUsuario) => {
     try {
       const bannerResponse = await axios.get(
-        `https://localhost:8080/imagen/perfil/banner/${idUsuario}`,
+        `https://devocionales-app-backend.onrender.com/imagen/perfil/banner/${idUsuario}`,
         { responseType: "arraybuffer", withCredentials: true }
       );
       const bannerBlob = new Blob([bannerResponse.data], {

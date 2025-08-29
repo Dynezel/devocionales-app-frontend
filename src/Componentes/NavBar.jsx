@@ -16,7 +16,7 @@ export default function NavBar({ handleConversacionClick }) {
 
   const handleLogout = async () => {
     try {
-      await axios.post("https://localhost:8080/logout", null, { withCredentials: true });
+      await axios.post("https://devocionales-app-backend.onrender.com/logout", null, { withCredentials: true });
       setUser(null);
       navigate("/login");
     } catch (error) {
@@ -27,7 +27,7 @@ export default function NavBar({ handleConversacionClick }) {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await axios.get("https://localhost:8080/usuario/perfil", { withCredentials: true });
+        const response = await axios.get("https://devocionales-app-backend.onrender.com/usuario/perfil", { withCredentials: true });
         setUser(response.data);
       } catch (error) {
         console.error("Error fetching user", error);
@@ -55,7 +55,7 @@ export default function NavBar({ handleConversacionClick }) {
         {user && windowWidth < 768 ? (
           <div className="user-profile" onClick={toggleMenu}>
             <img
-              src={`https://localhost:8080/imagen/perfil/${user.idUsuario}`}
+              src={`https://devocionales-app-backend.onrender.com/imagen/perfil/${user.idUsuario}`}
               alt="Foto de perfil"
               className="profile-image"
               onError={(e) => {
@@ -88,7 +88,7 @@ export default function NavBar({ handleConversacionClick }) {
                 <div className="user-profile" onClick={toggleMenu}>
                   <div>{user.nombre}</div>
                   <img
-                    src={`https://localhost:8080/imagen/perfil/${user.idUsuario}`}
+                    src={`https://devocionales-app-backend.onrender.com/imagen/perfil/${user.idUsuario}`}
                     alt="Foto de perfil"
                     className="profile-image"
                     onError={(e) => {

@@ -39,7 +39,7 @@ export default function PerfilUsuario() {
   useEffect(() => {
     const fetchUsuarioActual = async () => {
       try {
-        const res = await axios.get("https://localhost:8080/usuario/perfil", {
+        const res = await axios.get("https://devocionales-app-backend.onrender.com/usuario/perfil", {
           withCredentials: true,
         });
         setUsuarioActual(res.data);
@@ -56,18 +56,18 @@ export default function PerfilUsuario() {
       if (!idUsuario) return;
       try {
         const res = await axios.get(
-          `https://localhost:8080/usuario/perfil/${idUsuario}`
+          `https://devocionales-app-backend.onrender.com/usuario/perfil/${idUsuario}`
         );
         setUsuarioPerfil(res.data);
         // Configurar imágenes
         setImagenPerfil(
           res.data.fotoPerfil
-            ? `https://localhost:8080/imagen/perfil/${res.data.idUsuario}`
+            ? `https://devocionales-app-backend.onrender.com/imagen/perfil/${res.data.idUsuario}`
             : defaultImage
         );
         setBanner(
           res.data.bannerPerfil
-            ? `https://localhost:8080/imagen/banner/${res.data.idUsuario}`
+            ? `https://devocionales-app-backend.onrender.com/imagen/banner/${res.data.idUsuario}`
             : bannerDefault
         );
       } catch (err) {

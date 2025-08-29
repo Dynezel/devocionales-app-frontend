@@ -43,7 +43,7 @@ export default function RegistrarUsuario() {
       // Enviar solicitud POST al backend para registrar el usuario
       try {
         const response = await axios.post(
-          "https://localhost:8080/usuario/registro",
+          "https://devocionales-app-backend.onrender.com/usuario/registro",
           formData, // Usamos formData en lugar de un objeto plano
 
         );

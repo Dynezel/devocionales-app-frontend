@@ -15,7 +15,7 @@ const Notificaciones = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await axios.get("https://localhost:8080/usuario/perfil", { withCredentials: true });
+        const response = await axios.get("https://devocionales-app-backend.onrender.com/usuario/perfil", { withCredentials: true });
         setUser(response.data);
       } catch (error) {
         console.error("No se ha podido encontrar al usuario", error);
@@ -30,12 +30,12 @@ const Notificaciones = () => {
 
     const fetchNotifications = async () => {
       try {
-        const response = await axios.get(`https://localhost:8080/notificaciones/${user.idUsuario}`, { withCredentials: true });
+        const response = await axios.get(`https://devocionales-app-backend.onrender.com/notificaciones/${user.idUsuario}`, { withCredentials: true });
         const notificationsWithImages = await Promise.all(
           response.data.map(async (n) => {
             let imagenEmisor = defaultImage;
             try {
-              const imgResp = await axios.get(`https://localhost:8080/imagen/perfil/${n.usuarioEmisorId}`, { responseType: 'blob' });
+              const imgResp = await axios.get(`https://devocionales-app-backend.onrender.com/imagen/perfil/${n.usuarioEmisorId}`, { responseType: 'blob' });
               imagenEmisor = URL.createObjectURL(imgResp.data);
             } catch {}
             return { ...n, imagenEmisor };
@@ -52,7 +52,7 @@ const Notificaciones = () => {
 
   const handleNotificationClick = async (notification) => {
     try {
-      await axios.put(`https://localhost:8080/notificaciones/marcar-como-leida/${notification.id}`);
+      await axios.put(`https://devocionales-app-backend.onrender.com/notificaciones/marcar-como-leida/${notification.id}`);
       setNotifications((prev) =>
         prev.map((n) => (n.id === notification.id ? { ...n, visto: true } : n))
       );

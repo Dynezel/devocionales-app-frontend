@@ -8,8 +8,8 @@ export default function WebSocketComponent({ usuarioId, onNewNotification }) {
       alert("usuarioActualId no definido, WebSocket no se inicia");
       return;
     }
-    const socket = new SockJS(`https://localhost:8080/ws-notifications?userId=${usuarioId}`);
-    console.log("Connecting to:", `https://localhost:8080/ws-notifications?userId=${usuarioId}`);
+    const socket = new SockJS(`https://devocionales-app-backend.onrender.com/ws-notifications?userId=${usuarioId}`);
+    console.log("Connecting to:", `https://devocionales-app-backend.onrender.com/ws-notifications?userId=${usuarioId}`);
     const stompClient = Stomp.over(socket);
     console.log("Inicializando WebSocket con usuarioActualId:", usuarioActualId);
     if (!usuarioActualId) {

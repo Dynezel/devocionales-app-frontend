@@ -24,7 +24,7 @@ export default function Devocional() {
     const fetchUser = async () => {
       try {
         const response = await axios.get(
-          "https://localhost:8080/usuario/perfil",
+          "https://devocionales-app-backend.onrender.com/usuario/perfil",
           { withCredentials: true }
         );
         setUser(response.data);
@@ -41,7 +41,7 @@ export default function Devocional() {
       const obtenerDevocional = async () => {
         try {
           const response = await axios.get(
-            `https://localhost:8080/encontrar/${id}`
+            `https://devocionales-app-backend.onrender.com/encontrar/${id}`
           );
           setDevocional(response.data);
         } catch (error) {
@@ -59,7 +59,7 @@ export default function Devocional() {
   
       try {
         const response = await axios.get(
-          `https://localhost:8080/devocionales/${devocional.id}/megusta`
+          `https://devocionales-app-backend.onrender.com/devocionales/${devocional.id}/megusta`
         );
         const likesData = response.data;
   
@@ -93,7 +93,7 @@ export default function Devocional() {
 
     try {
       const response = await axios.post(
-        `https://localhost:8080/devocionales/${devocionalId}`,
+        `https://devocionales-app-backend.onrender.com/devocionales/${devocionalId}`,
         { usuarioReceptorId: devocional.autor.idUsuario },
         { withCredentials: true }
       );
@@ -124,10 +124,10 @@ export default function Devocional() {
     if (window.confirm("¿Estás seguro de que deseas eliminar este devocional?")) {
       try {
         await axios.delete(
-          `https://localhost:8080/devocionales/${devocional.id}/comentarios`,
+          `https://devocionales-app-backend.onrender.com/devocionales/${devocional.id}/comentarios`,
           { withCredentials: true }
         );
-        await axios.delete(`https://localhost:8080/eliminar/${devocional.id}`, {
+        await axios.delete(`https://devocionales-app-backend.onrender.com/eliminar/${devocional.id}`, {
           withCredentials: true,
         });
         alert("Devocional eliminado con éxito");

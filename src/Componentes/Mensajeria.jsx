@@ -86,7 +86,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
     (async () => {
       try {
         const resp = await axios.get(
-          `https://localhost:8080/usuario/perfil/${usuarioId}`
+          `https://devocionales-app-backend.onrender.com/usuario/perfil/${usuarioId}`
         );
         if (!cancel) setNombreUsuario(resp.data.nombre || "");
       } catch {
@@ -102,7 +102,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
     setCargando(true);
     try {
       const resp = await axios.get(
-        "https://localhost:8080/mensajes/conversacion",
+        "https://devocionales-app-backend.onrender.com/mensajes/conversacion",
         {
           params: {
             emisorId: usuarioActualId,
@@ -157,7 +157,7 @@ export default function Mensajeria({ usuarioId, usuarioActualId, onClose }) {
   // ===== WebSocket =====
   useEffect(() => {
     const socket = new SockJS(
-      `https://localhost:8080/ws-notifications?userId=${usuarioActualId}`
+      `https://devocionales-app-backend.onrender.com/ws-notifications?userId=${usuarioActualId}`
     );
     const stompClient = new Client({
       webSocketFactory: () => socket,

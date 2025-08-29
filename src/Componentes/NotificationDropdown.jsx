@@ -22,12 +22,12 @@ const NotificationDropdown = ({ user }) => {
 
   const fetchNotifications = async () => {
     try {
-      const response = await axios.get(`https://localhost:8080/notificaciones/${user.idUsuario}`);
+      const response = await axios.get(`https://devocionales-app-backend.onrender.com/notificaciones/${user.idUsuario}`);
       const notificationsWithImages = await Promise.all(
         response.data.map(async (n) => {
           let imagenEmisor = defaultImage;
           try {
-            const imgResp = await axios.get(`https://localhost:8080/imagen/perfil/${n.usuarioEmisorId}`, { responseType: 'blob' });
+            const imgResp = await axios.get(`https://devocionales-app-backend.onrender.com/imagen/perfil/${n.usuarioEmisorId}`, { responseType: 'blob' });
             imagenEmisor = URL.createObjectURL(imgResp.data);
           } catch {}
           return { ...n, imagenEmisor };
@@ -43,7 +43,7 @@ const NotificationDropdown = ({ user }) => {
   useEffect(() => {
     if (!user?.idUsuario) return;
 
-    const socket = new SockJS(`https://localhost:8080/ws-notifications?userId=${user.idUsuario}`);
+    const socket = new SockJS(`https://devocionales-app-backend.onrender.com/ws-notifications?userId=${user.idUsuario}`);
     const client = new Client({
       webSocketFactory: () => socket,
       reconnectDelay: 5000,
@@ -56,7 +56,7 @@ const NotificationDropdown = ({ user }) => {
           const nueva = JSON.parse(body);
           let imagenEmisor = defaultImage;
           try {
-            const imgResp = await axios.get(`https://localhost:8080/imagen/perfil/${nueva.usuarioEmisorId}`, { responseType: 'blob' });
+            const imgResp = await axios.get(`https://devocionales-app-backend.onrender.com/imagen/perfil/${nueva.usuarioEmisorId}`, { responseType: 'blob' });
             imagenEmisor = URL.createObjectURL(imgResp.data);
           } catch {}
           setNotifications(prev => [{ ...nueva, imagenEmisor }, ...prev]);
@@ -74,7 +74,7 @@ const NotificationDropdown = ({ user }) => {
 
   const handleNotificationClick = async (notification) => {
     try {
-      await axios.put(`https://localhost:8080/notificaciones/marcar-como-leida/${notification.id}`);
+      await axios.put(`https://devocionales-app-backend.onrender.com/notificaciones/marcar-como-leida/${notification.id}`);
       setNotifications(prev =>
         prev.map(n => n.id === notification.id ? { ...n, visto: true } : n)
       );
@@ -91,7 +91,7 @@ const NotificationDropdown = ({ user }) => {
 
   const handleAceptarSolicitud = async (emisorId) => {
     try {
-      await axios.post(`https://localhost:8080/amistades/${user.idUsuario}/aceptar-solicitud/${emisorId}`);
+      await axios.post(`https://devocionales-app-backend.onrender.com/amistades/${user.idUsuario}/aceptar-solicitud/${emisorId}`);
       fetchNotifications();
     } catch (err) {
       console.error("Error al aceptar solicitud de amistad:", err);
@@ -100,7 +100,7 @@ const NotificationDropdown = ({ user }) => {
 
   const handleRechazarSolicitud = async (emisorId) => {
     try {
-      await axios.delete(`https://localhost:8080/amistades/${user.idUsuario}/rechazar-solicitud/${emisorId}`);
+      await axios.delete(`https://devocionales-app-backend.onrender.com/amistades/${user.idUsuario}/rechazar-solicitud/${emisorId}`);
       fetchNotifications();
     } catch (err) {
       console.error("Error al rechazar solicitud de amistad:", err);

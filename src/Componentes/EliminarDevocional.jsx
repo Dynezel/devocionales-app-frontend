@@ -9,7 +9,7 @@ export default function CrearTarea() {
   const handleEliminar = async (e) => {
     e.preventDefault();;
 
-    const URL = `https://localhost:8080/devocionales/eliminar/${id}`;
+    const URL = `https://devocionales-app-backend.onrender.com/devocionales/eliminar/${id}`;
 
     try {
       const response = await axios.delete(URL)

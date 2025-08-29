@@ -25,7 +25,7 @@ export default function Devocionales() {
     const obtenerDatos = async () => {
       try {
         const response = await axios.get(
-          "https://localhost:8080/devocionales/listar",
+          "https://devocionales-app-backend.onrender.com/devocionales/listar",
           { withCredentials: true }
         );
         setDevocionales(response.data);
@@ -44,7 +44,7 @@ export default function Devocionales() {
           setResultadosBusqueda(devocionales);
         } else {
           const response = await axios.get(
-            "https://localhost:8080/devocionales/buscar",
+            "https://devocionales-app-backend.onrender.com/devocionales/buscar",
             { params: { titulo: filtroTitulo } }
           );
           setResultadosBusqueda(response.data);
@@ -71,7 +71,7 @@ export default function Devocionales() {
   const incrementarVistas = async (id) => {
     try {
       await axios.post(
-        `https://localhost:8080/${id}/vistas`
+        `https://devocionales-app-backend.onrender.com/${id}/vistas`
       );
     } catch (error) {
       console.error("Error al incrementar vistas:", error);
