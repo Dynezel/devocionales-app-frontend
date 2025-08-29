@@ -25,7 +25,6 @@
   align-items: flex-start;
   margin-bottom: 10px;
   padding: 10px;
-  border-bottom: 1px solid #eee;
   position: relative; /* Necesario para posicionar el menú de tres puntos */
 }
 
@@ -38,13 +37,12 @@
 }
 
 .comentario-texto {
+  flex: 1; /* ocupa todo el espacio restante */
+  display: flex;
+  flex-direction: column;
+  justify-content:start; /* centra verticalmente el texto */
   text-align: left;
-  max-width: 80%; /* Ajusta el ancho máximo para dar espacio al menú de tres puntos */
-  flex-grow: 1; /* Permite que el texto ocupe todo el espacio restante */
-  margin-top: 2%;
-  margin-left: -8%;
 }
-
 .comentario-usuario {
   font-weight: bold;
   margin-right: 5px;
@@ -90,20 +88,18 @@
 }
 
 .comentario-item {
-  position: relative; /* Para que el menú desplegable esté posicionado correctamente */
   display: flex;
-  align-items: start;
-  justify-content: space-between; /* Asegura que el texto y los iconos estén separados */
-  margin-bottom: 10px;
+  align-items: flex-start; /* Imagen y texto alineados arriba */
+  gap: 10px;
   padding: 10px;
-  background-color: #383838;
-  border-radius: 5px;
+  border-bottom: 1px solid #444;
 }
 
+
 .comentario-menu-container {
-  position: relative;
-  display: inline-block;
-  
+  width: 40px; /* espacio fijo para el menú */
+  display: flex;
+  justify-content: flex-end;
 }
 
 .comentario-menu-button {

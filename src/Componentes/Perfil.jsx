@@ -15,7 +15,7 @@ export default function Perfil() {
   const [imagenPerfil, setImagenPerfil] = useState(null);
   const [banner, setBanner] = useState(null);
   const [error, setError] = useState(null);
-  const [showConfig, setShowConfig] = useState(false); // Estado para mostrar el overlay
+  const [showConfig, setShowConfig] = useState(false);
   const navigate = useNavigate();
 
   const modules = {
@@ -26,7 +26,7 @@ export default function Perfil() {
     const fetchUser = async () => {
       try {
         const userResponse = await axios.get(
-          "https://devocionales-app-backend.onrender.com/usuario/perfil",
+          "https://localhost:8080/usuario/perfil",
           { withCredentials: true }
         );
         setUser(userResponse.data);
@@ -50,7 +50,7 @@ export default function Perfil() {
   const cargarImagenPerfil = async (idUsuario) => {
     try {
       const response = await axios.get(
-        `https://devocionales-app-backend.onrender.com/imagen/perfil/${idUsuario}`,
+        `https://localhost:8080/imagen/perfil/${idUsuario}`,
         { responseType: "arraybuffer", withCredentials: true }
       );
       const blob = new Blob([response.data], { type: "image/jpeg" });
@@ -65,7 +65,7 @@ export default function Perfil() {
   const cargarBanner = async (idUsuario) => {
     try {
       const bannerResponse = await axios.get(
-        `https://devocionales-app-backend.onrender.com/imagen/perfil/banner/${idUsuario}`,
+        `https://localhost:8080/imagen/perfil/banner/${idUsuario}`,
         { responseType: "arraybuffer", withCredentials: true }
       );
       const bannerBlob = new Blob([bannerResponse.data], {
@@ -76,6 +76,12 @@ export default function Perfil() {
     } catch (error) {
       console.error("Error al cargar el banner:", error);
     }
+  };
+
+  const formatearFecha = (fechaISO) => {
+    if (!fechaISO) return "Fecha no disponible";
+    const fecha = new Date(fechaISO);
+    return fecha.toLocaleDateString("es-AR") + " " + fecha.toLocaleTimeString("es-AR", { hour: '2-digit', minute: '2-digit' });
   };
 
   return (
@@ -92,36 +98,33 @@ export default function Perfil() {
             </div>
             <div className="perfil-info">
               <div className="perfil-main">
-                  <img
-                    className="profile-picture"
-                    src={imagenPerfil || defaultImage}
-                    alt="Imagen de Perfil"
-                  />
+                <img
+                  className="profile-picture"
+                  src={imagenPerfil || defaultImage}
+                  alt="Imagen de Perfil"
+                />
                 <div className="perfil-details">
                   <h2 className="perfil-nombre">{user.nombre}</h2>
                   <h4 className="perfil-username">@{user.nombreUsuario}</h4>
                   <div className="seguidores-container">
-            <Amigos
-              usuarioId={user.idUsuario}
-              usuarioActualId={user.idUsuario}
-            />
-          </div>
+                    <Amigos
+                      usuarioId={user.idUsuario}
+                      usuarioActualId={user.idUsuario}
+                    />
+                  </div>
                   <div className="perfil-bio">
                     <p className="bio">{user.biografia}</p>
                   </div>
                 </div>
                 <button
                   className="editar-perfil-button"
-                  onClick={() => setShowConfig(true)} // Mostrar el overlay
+                  onClick={() => setShowConfig(true)}
                 >
                   Editar Perfil
                 </button>
               </div>
             </div>
           </div>
-
-          {/* Sección de Seguidores */}
-          
 
           {/* Sección de Devocionales */}
           <div className="perfil-devocionales">
@@ -135,30 +138,24 @@ export default function Perfil() {
                   <div className="devocional-item">
                     <div className="devocional-content">
                       <h2 className="devocional-titulo">
-                        <u>{devocional.nombre || "Título no disponible"}</u>
+                        <u>{devocional.titulo || "Título no disponible"}</u>
                       </h2>
                       <ReactQuill
                         theme="snow"
-                        value={
-                          devocional.descripcion || "Descripción no disponible"
-                        }
+                        value={devocional.contenido || "Descripción no disponible"}
                         readOnly={true}
                         modules={modules}
                         className="devocional-descripcion"
                       />
                       <p className="devocional-fecha">
                         <strong>Fecha de Creación:</strong>{" "}
-                        {devocional.fechaCreacion || "Fecha no disponible"}
+                        {formatearFecha(devocional.fechaCreacion)}
                       </p>
                       <p className="devocional-autor">
-                        <strong>Autor:</strong>
-                        {user.idUsuario ? (
-                          <Link to={`/usuario/perfil/${user.idUsuario}`}>
-                            {user.nombre || "Nombre no disponible"}
-                          </Link>
-                        ) : (
-                          "Información del autor no disponible"
-                        )}
+                        <strong>Autor:</strong>{" "}
+                        <Link to={`/usuario/perfil/${user.idUsuario}`}>
+                          {user.nombre || "Nombre no disponible"}
+                        </Link>
                       </p>
                       <Comentarios
                         devocionalId={devocional.id}
@@ -173,14 +170,13 @@ export default function Perfil() {
             )}
           </div>
 
-          {/* Mostrar el componente de configuración si showConfig es true */}
           {showConfig && (
             <ConfiguracionUsuario
               user={user}
               setShowConfig={setShowConfig}
               setUser={setUser}
-              setImagenPerfil={setImagenPerfil} // Actualizar la imagen localmente
-              setBanner={setBanner} // Actualizar el banner localmente
+              setImagenPerfil={setImagenPerfil}
+              setBanner={setBanner}
             />
           )}
         </>

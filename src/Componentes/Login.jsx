@@ -12,7 +12,7 @@ export default function Login() {
       params.append('email', email);
       params.append('contrasenia', contrasenia);
 
-      const response = await axios.post('https://devocionales-app-backend.onrender.com/logincheck', params, {
+      const response = await axios.post('https://localhost:8080/logincheck', params, {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },

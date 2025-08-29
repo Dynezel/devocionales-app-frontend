@@ -26,7 +26,7 @@ const ConfiguracionUsuario = ({ user, setShowConfig, setUser, setImagenPerfil, s
 
     try {
       const response = await axios.post(
-        `https://devocionales-app-backend.onrender.com/usuario/perfil/modificar/${user.idUsuario}`,
+        `https://localhost:8080/usuario/perfil/modificar/${user.idUsuario}`,
         formData,
         { withCredentials: true, headers: { "Content-Type": "multipart/form-data" } }
       );
@@ -78,7 +78,7 @@ const ConfiguracionUsuario = ({ user, setShowConfig, setUser, setImagenPerfil, s
     if (window.confirm("¿Estás seguro de que quieres eliminar tu perfil?")) {
       try {
         await axios.delete(
-          `https://devocionales-app-backend.onrender.com/usuario/eliminar/${user.idUsuario}`,
+          `https://localhost:8080/usuario/eliminar/${user.idUsuario}`,
           { withCredentials: true }
         );
         alert("Perfil eliminado correctamente");
@@ -125,7 +125,7 @@ const ConfiguracionUsuario = ({ user, setShowConfig, setUser, setImagenPerfil, s
           <div className="profile-picture-container-configuracion" onClick={handleProfilePictureClick}>
             <img
               className="profile-picture-configuracion"
-              src={imagenPerfil ? URL.createObjectURL(imagenPerfil) : (user.fotoPerfil ? `https://devocionales-app-backend.onrender.com/imagen/perfil/${user.idUsuario}` : "default-profile.png")} 
+              src={imagenPerfil ? URL.createObjectURL(imagenPerfil) : (user.fotoPerfil ? `https://localhost:8080/imagen/perfil/${user.idUsuario}` : "default-profile.png")} 
               alt="Imagen de Perfil"
             />
             <input
@@ -142,7 +142,7 @@ const ConfiguracionUsuario = ({ user, setShowConfig, setUser, setImagenPerfil, s
           <div className="banner-picture-container-configuracion" onClick={handleBannerClick}>
             <img
               className="banner-pictur-configuracione"
-              src={banner ? URL.createObjectURL(banner) : (user.bannerPerfil ? `https://devocionales-app-backend.onrender.com/imagen/perfil/banner/${user.idUsuario}` : bannerDefault)} 
+              src={banner ? URL.createObjectURL(banner) : (user.bannerPerfil ? `https://localhost:8080/imagen/perfil/banner/${user.idUsuario}` : bannerDefault)} 
               alt="Banner de Usuario"
             />
             <input

@@ -17,122 +17,101 @@ const NotificationDropdown = ({ user }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        const response = await axios.get(`https://devocionales-app-backend.onrender.com/notificaciones/${user.idUsuario}`);
-        const notificationsWithImages = await Promise.all(
-          response.data.map(async (notification) => {
-            try {
-              const imageResponse = await axios.get(
-                `https://devocionales-app-backend.onrender.com/imagen/perfil/${notification.usuarioEmisorId}`,
-                { responseType: 'arraybuffer' }
-              );
-              const base64Image = btoa(
-                new Uint8Array(imageResponse.data).reduce((data, byte) => data + String.fromCharCode(byte), '')
-              );
-              return { ...notification, imagenEmisor: `data:image/jpeg;base64,${base64Image}` };
-            } catch {
-              return { ...notification, imagenEmisor: defaultImage };
-            }
-          })
-        );
-        setNotifications(notificationsWithImages);
-        const nuevas = notificationsWithImages.filter(n => !n.visto).length;
-        setNoLeidas(nuevas);
-      } catch (error) {
-        console.error('Error fetching notifications', error);
-      }
-    };
+    if (user?.idUsuario) fetchNotifications();
+  }, [user?.idUsuario]);
 
-    if (user?.idUsuario) {
-      fetchNotifications();
+  const fetchNotifications = async () => {
+    try {
+      const response = await axios.get(`https://localhost:8080/notificaciones/${user.idUsuario}`);
+      const notificationsWithImages = await Promise.all(
+        response.data.map(async (n) => {
+          let imagenEmisor = defaultImage;
+          try {
+            const imgResp = await axios.get(`https://localhost:8080/imagen/perfil/${n.usuarioEmisorId}`, { responseType: 'blob' });
+            imagenEmisor = URL.createObjectURL(imgResp.data);
+          } catch {}
+          return { ...n, imagenEmisor };
+        })
+      );
+      setNotifications(notificationsWithImages);
+      setNoLeidas(notificationsWithImages.filter(n => !n.visto).length);
+    } catch (err) {
+      console.error('Error fetching notifications', err);
     }
-  }, [user.idUsuario]);
+  };
 
   useEffect(() => {
     if (!user?.idUsuario) return;
 
-    const socket = new SockJS(`https://devocionales-app-backend.onrender.com/ws-notifications?userId=${user.idUsuario}`);
+    const socket = new SockJS(`https://localhost:8080/ws-notifications?userId=${user.idUsuario}`);
     const client = new Client({
       webSocketFactory: () => socket,
       reconnectDelay: 5000,
       onConnect: () => {
-        client.subscribe('/user/queue/notificaciones', (message) => {
+        client.subscribe('/user/queue/notificaciones', async (message) => {
           let body = message.body;
-
           if (message.isBinaryBody && message._binaryBody) {
             body = new TextDecoder().decode(message._binaryBody);
           }
-
           const nueva = JSON.parse(body);
-
-          const fetchImagenYAgregar = async () => {
-            let imagenEmisor = defaultImage;
-            try {
-              const imageResponse = await axios.get(
-                `https://devocionales-app-backend.onrender.com/imagen/perfil/${nueva.usuarioEmisorId}`,
-                { responseType: 'arraybuffer' }
-              );
-              const base64Image = btoa(
-                new Uint8Array(imageResponse.data).reduce((data, byte) => data + String.fromCharCode(byte), '')
-              );
-              imagenEmisor = `data:image/jpeg;base64,${base64Image}`;
-            } catch {}
-
-            const nuevaNoti = { ...nueva, imagenEmisor };
-            setNotifications(prev => [nuevaNoti, ...prev]);
-            setNoLeidas(prev => prev + 1);
-          };
-
-          fetchImagenYAgregar();
+          let imagenEmisor = defaultImage;
+          try {
+            const imgResp = await axios.get(`https://localhost:8080/imagen/perfil/${nueva.usuarioEmisorId}`, { responseType: 'blob' });
+            imagenEmisor = URL.createObjectURL(imgResp.data);
+          } catch {}
+          setNotifications(prev => [{ ...nueva, imagenEmisor }, ...prev]);
+          setNoLeidas(prev => prev + 1);
         });
       },
-      onStompError: (frame) => {
-        console.error("STOMP error:", frame);
-      }
+      onStompError: (frame) => console.error("STOMP error:", frame)
     });
 
     client.activate();
     stompClientRef.current = client;
 
-    return () => {
-      client.deactivate();
-    };
-  }, [user.idUsuario]);
+    return () => client.deactivate();
+  }, [user?.idUsuario]);
 
   const handleNotificationClick = async (notification) => {
     try {
-      await axios.put(`https://devocionales-app-backend.onrender.com/notificaciones/marcar-como-leida/${notification.id}`);
+      await axios.put(`https://localhost:8080/notificaciones/marcar-como-leida/${notification.id}`);
       setNotifications(prev =>
         prev.map(n => n.id === notification.id ? { ...n, visto: true } : n)
       );
       setNoLeidas(prev => Math.max(0, prev - 1));
 
-      if (notification.tipo === 'mensaje') {
-        setNotificationActiva(notification.usuarioEmisorId);
-      } else if (['megusta', 'comentario', 'devocionalcreado'].includes(notification.tipo)) {
-        navigate(notification.url);
-      }
-    } catch (error) {
-      console.error('Error handling notification click', error);
+      if (notification.tipo === 'mensaje') setNotificationActiva(notification.usuarioEmisorId);
+      else if (['megusta', 'comentario', 'devocionalcreado'].includes(notification.tipo)) navigate(notification.url);
+    } catch (err) {
+      console.error('Error handling notification click', err);
     }
   };
 
-  const handleClickIconoNotificacion = () => {
-    setDropdownAbierto(!dropdownAbierto);
+  const handleClickIconoNotificacion = () => setDropdownAbierto(!dropdownAbierto);
+
+  const handleAceptarSolicitud = async (emisorId) => {
+    try {
+      await axios.post(`https://localhost:8080/amistades/${user.idUsuario}/aceptar-solicitud/${emisorId}`);
+      fetchNotifications();
+    } catch (err) {
+      console.error("Error al aceptar solicitud de amistad:", err);
+    }
+  };
+
+  const handleRechazarSolicitud = async (emisorId) => {
+    try {
+      await axios.delete(`https://localhost:8080/amistades/${user.idUsuario}/rechazar-solicitud/${emisorId}`);
+      fetchNotifications();
+    } catch (err) {
+      console.error("Error al rechazar solicitud de amistad:", err);
+    }
   };
 
   return (
     <div className="notification-container">
       <div className="notification-icon-wrapper" onClick={handleClickIconoNotificacion}>
-        <img
-          src={NotificationBell}
-          className="notification-bell"
-          alt="Notification Bell"
-        />
-        {noLeidas > 0 && (
-          <span className="notification-badge">{noLeidas}</span>
-        )}
+        <img src={NotificationBell} className="notification-bell" alt="Notification Bell" />
+        {noLeidas > 0 && <span className="notification-badge">{noLeidas}</span>}
       </div>
 
       {dropdownAbierto && (
@@ -142,18 +121,18 @@ const NotificationDropdown = ({ user }) => {
             {notifications.length === 0 ? (
               <li className="notification-item">No hay nuevas notificaciones</li>
             ) : (
-              notifications.map((notification) => (
+              notifications.map(notification => (
                 <li
                   key={notification.id}
                   className={`notification-item ${notification.visto ? 'leida' : 'no-leida'}`}
                   onClick={() => handleNotificationClick(notification)}
                 >
-                  <img src={notification.imagenEmisor} alt="Emisor" className="notification-emisor-img" />
+                  <img src={notification.imagenEmisor} alt={notification.nombreEmisor} className="notification-emisor-img" />
                   <span>{notification.mensaje}</span>
                   {notification.tipo === 'solicitudamistad' && (
                     <div className="notification-actions">
-                      <button onClick={() => handleAceptarSolicitud(notification.usuarioEmisorId, user.idUsuario)}>Aceptar</button>
-                      <button onClick={() => handleRechazarSolicitud(notification.usuarioEmisorId, user.idUsuario)}>Rechazar</button>
+                      <button onClick={() => handleAceptarSolicitud(notification.usuarioEmisorId)}>Aceptar</button>
+                      <button onClick={() => handleRechazarSolicitud(notification.usuarioEmisorId)}>Rechazar</button>
                     </div>
                   )}
                 </li>
@@ -162,6 +141,7 @@ const NotificationDropdown = ({ user }) => {
           </ul>
         </div>
       )}
+
       {notificationActiva && (
         <MensajeriaPopup
           usuarioId={notificationActiva}

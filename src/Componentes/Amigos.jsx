@@ -12,17 +12,18 @@ export default function Amigos({ usuarioId, usuarioActualId }) {
   const amigosRef = useRef(null);
   const navigate = useNavigate();
 
+  const esPerfilPropio = usuarioId === usuarioActualId;
+
   const obtenerAmigos = async () => {
     try {
       const response = await axios.get(
-        `https://devocionales-app-backend.onrender.com/amistades/${usuarioId}/amigos`
+        `https://localhost:8080/amistades/${usuarioId}/amigos`
       );
-      setAmigos(response.data);
+      const listaAmigos = response.data || [];
+      setAmigos(listaAmigos);
 
       // Verifica si el usuario actual está en la lista de amigos
-      const amigoExistente = response.data.some(
-        (amigo) => amigo.usuarioAmigo.idUsuario === usuarioActualId || amigo.usuarioSolicitante.idUsuario === usuarioActualId
-      );
+      const amigoExistente = listaAmigos.some(a => a.id === usuarioActualId);
       setEsAmigo(amigoExistente);
     } catch (error) {
       console.error("Error al obtener amigos:", error);
@@ -42,12 +43,23 @@ export default function Amigos({ usuarioId, usuarioActualId }) {
 
     try {
       await axios.post(
-        `https://devocionales-app-backend.onrender.com/amistades/${usuarioActualId}/enviar-solicitud/${usuarioId}`
+        `https://localhost:8080/amistades/${usuarioActualId}/enviar-solicitud/${usuarioId}`
       );
       setSolicitudEnviada(true);
-      obtenerAmigos(); // Refresca la lista de amigos al enviar la solicitud
     } catch (error) {
       console.error("Error al enviar solicitud de amistad:", error);
+    }
+  };
+
+  const eliminarAmigo = async (amigoId) => {
+    try {
+      await axios.delete(
+        `https://localhost:8080/amistades/${usuarioId}/eliminar/${amigoId}`
+      );
+      setAmigos(prev => prev.filter(a => a.id !== amigoId));
+      if (amigoId === usuarioActualId) setEsAmigo(false);
+    } catch (error) {
+      console.error("Error al eliminar amigo:", error);
     }
   };
 
@@ -59,9 +71,7 @@ export default function Amigos({ usuarioId, usuarioActualId }) {
 
   useEffect(() => {
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   return (
@@ -69,44 +79,49 @@ export default function Amigos({ usuarioId, usuarioActualId }) {
       <div className="amigos" onClick={() => setMostrarAmigos(!mostrarAmigos)}>
         <p>Amigos</p>
         <p>{amigos.length}</p>
+
         {mostrarAmigos && (
           <div className="amigos-lista" ref={amigosRef}>
             <h3>Amigos</h3>
             <ul>
-              {amigos.map((amigo) => {
-                const amigoAMostrar =
-                  amigo.usuarioAmigo.idUsuario === usuarioId
-                    ? amigo.usuarioSolicitante
-                    : amigo.usuarioAmigo;
+              {amigos.length === 0 && <li>No hay amigos aún.</li>}
+              {amigos.map((amigo) => (
+                <li key={amigo.id}>
+                  <Link to={`/usuario/perfil/${amigo.id}`}>
+                    <button className="boton-amigos">
+                      <img
+                        src={`https://localhost:8080/imagen/perfil/${amigo.id}`}
+                        alt="Perfil"
+                        onError={(e) => { e.target.onerror = null; e.target.src = defaultImage; }}
+                      />
+                      {amigo.nombre}
+                    </button>
+                  </Link>
 
-                return (
-                  <li key={amigoAMostrar.idUsuario}>
-                    <Link to={`/usuario/perfil/${amigoAMostrar.idUsuario}`}>
-                      <button className="boton-amigos">
-                        <img
-                          src={`https://devocionales-app-backend.onrender.com/imagen/perfil/${amigoAMostrar.idUsuario}`}
-                          alt="Perfil"
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = defaultImage;
-                          }}
-                        />
-                        {amigoAMostrar.nombre}
-                      </button>
-                    </Link>
-                  </li>
-                );
-              })}
+                  {esPerfilPropio && (
+                    <button
+                      className="btn-eliminar-amigo"
+                      onClick={() => eliminarAmigo(amigo.id)}
+                    >
+                      Eliminar
+                    </button>
+                  )}
+                </li>
+              ))}
             </ul>
           </div>
         )}
       </div>
-      {usuarioId !== usuarioActualId && !esAmigo && (
+
+      {!esPerfilPropio && !esAmigo && (
         <div className="botones-container">
           {solicitudEnviada ? (
             <p>Solicitud Enviada</p>
           ) : (
-            <button onClick={enviarSolicitudAmistad} className="btn-enviar-solicitud">
+            <button
+              onClick={enviarSolicitudAmistad}
+              className="btn-enviar-solicitud"
+            >
               Enviar Solicitud de Amistad
             </button>
           )}

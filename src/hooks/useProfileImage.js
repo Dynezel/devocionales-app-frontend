@@ -47,7 +47,7 @@ export default function useProfileImage(userId) {
     (async () => {
       try {
         const resp = await axios.get(
-          `https://devocionales-app-backend.onrender.com/imagen/perfil/${userId}`,
+          `https://localhost:8080/imagen/perfil/${userId}`,
           { responseType: "arraybuffer" }
         );
         if (cancel) return;

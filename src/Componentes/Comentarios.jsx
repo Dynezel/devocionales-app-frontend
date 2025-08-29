@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import "../css/Comentarios.css"; // Importa los estilos CSS
-import { useNavigate } from 'react-router-dom';
-import defaultImage from '../Images/default-image-profile.jpg';
+import "../css/Comentarios.css";
+import { useNavigate } from "react-router-dom";
+import defaultImage from "../Images/default-image-profile.jpg";
 
 export default function Comentarios({ devocionalId, usuarioId }) {
   const [comentarios, setComentarios] = useState([]);
@@ -12,78 +12,52 @@ export default function Comentarios({ devocionalId, usuarioId }) {
   const [textoEditado, setTextoEditado] = useState("");
   const [menuActivo, setMenuActivo] = useState(null);
   const navigate = useNavigate();
-  const menuRefs = useRef({}); // Objeto para almacenar referencias de los menús desplegables
+  const menuRefs = useRef({});
 
+  // Obtener usuario logueado
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await axios.get(
-          "https://devocionales-app-backend.onrender.com/usuario/perfil",
-          { withCredentials: true }
-        );
+        const response = await axios.get("https://localhost:8080/usuario/perfil", {
+          withCredentials: true,
+        });
         setUser(response.data);
       } catch (error) {
         console.error("Error fetching user", error);
       }
     };
-
     fetchUser();
   }, []);
 
+  // Obtener comentarios (ya vienen como ComentarioSinDevocional con usuario)
   useEffect(() => {
     const fetchComentarios = async () => {
       try {
         const response = await axios.get(
-          `https://devocionales-app-backend.onrender.com/devocionales/${devocionalId}/comentarios`,
-          {
-            params: { usuarioId },
-          }
+          `https://localhost:8080/devocionales/${devocionalId}/comentarios`
         );
-
-        const comentariosConUsuario = await Promise.all(
-          response.data.map(async (comentario) => {
-            const usuarioResponse = await axios.get(
-              `https://devocionales-app-backend.onrender.com/usuario/perfil/${comentario.idUsuario}`
-            );
-            comentario.usuario = usuarioResponse.data;
-            return comentario;
-          })
-        );
-
-        setComentarios(comentariosConUsuario);
-
-        console.log(usuarioId);
+        setComentarios(response.data);
       } catch (error) {
         console.error("Error al cargar comentarios", error);
       }
     };
-
     fetchComentarios();
-  }, [devocionalId, usuarioId]);
+  }, [devocionalId]);
 
   const handleAgregarComentario = async () => {
     try {
-      // Asegúrate de que el usuario esté autenticado antes de agregar un comentario
       if (!user) {
         navigate("/usuario/registro");
         return;
       }
-  
+
       const response = await axios.post(
-        `https://devocionales-app-backend.onrender.com/devocionales/${devocionalId}/comentarios?usuarioId=${usuarioId}`,
-        {
-          texto: nuevoComentario,
-        },
-        {
-          withCredentials: true,
-        }
+        `https://localhost:8080/devocionales/${devocionalId}/comentarios`,
+        { texto: nuevoComentario },
+        { withCredentials: true }
       );
-  
-      const nuevoComentarioConUsuario = {
-        ...response.data,
-        usuario: user,
-      };
-      setComentarios([...comentarios, nuevoComentarioConUsuario]);
+
+      setComentarios([...comentarios, response.data]); // ComentarioSinDevocional ya incluye usuario
       setNuevoComentario("");
     } catch (error) {
       console.error("Error al agregar comentario", error);
@@ -92,13 +66,11 @@ export default function Comentarios({ devocionalId, usuarioId }) {
 
   const handleEliminarComentario = async (comentarioId) => {
     try {
-      await axios.delete(`https://devocionales-app-backend.onrender.com/comentarios/${comentarioId}`, {
+      await axios.delete(`https://localhost:8080/comentarios/${comentarioId}`, {
         withCredentials: true,
       });
-      setComentarios(
-        comentarios.filter((comentario) => comentario.id !== comentarioId)
-      );
-      setMenuActivo(null); // Cierra el menú al eliminar el comentario
+      setComentarios(comentarios.filter((c) => c.id !== comentarioId));
+      setMenuActivo(null);
     } catch (error) {
       console.error("Error al eliminar comentario", error);
     }
@@ -116,45 +88,35 @@ export default function Comentarios({ devocionalId, usuarioId }) {
   const handleGuardarEdicion = async (comentarioId) => {
     try {
       await axios.put(
-        `https://devocionales-app-backend.onrender.com/comentarios/${comentarioId}`,
-        {
-          texto: textoEditado,
-        },
-        {
-          withCredentials: true,
-        }
+        `https://localhost:8080/comentarios/${comentarioId}`,
+        { texto: textoEditado },
+        { withCredentials: true }
       );
+
       setComentarios(
-        comentarios.map((comentario) =>
-          comentario.id === comentarioId
-            ? { ...comentario, texto: textoEditado }
-            : comentario
+        comentarios.map((c) =>
+          c.id === comentarioId ? { ...c, texto: textoEditado } : c
         )
       );
+
       setComentarioEditado(null);
       setTextoEditado("");
-      setMenuActivo(null); // Cierra el menú al guardar la edición
+      setMenuActivo(null);
     } catch (error) {
       console.error("Error al editar comentario", error);
     }
   };
 
+  // Cerrar menú si clickea afuera
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // Verifica si el clic se realizó fuera de todos los menús desplegables
       const outsideClick = Object.values(menuRefs.current).every(
         (ref) => ref && !ref.contains(event.target)
       );
-
-      if (outsideClick) {
-        setMenuActivo(null);
-      }
+      if (outsideClick) setMenuActivo(null);
     };
-
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   return (
@@ -171,7 +133,7 @@ export default function Comentarios({ devocionalId, usuarioId }) {
         <button
           onClick={handleAgregarComentario}
           className="agregar-comentario-boton"
-          disabled={nuevoComentario.trim().length === 0} // Desactiva el botón si el texto está vacío
+          disabled={nuevoComentario.trim().length === 0}
         >
           Agregar Comentario
         </button>
@@ -181,16 +143,16 @@ export default function Comentarios({ devocionalId, usuarioId }) {
         <ul className="comentarios-lista">
           {comentarios.map((comentario) => (
             <li key={comentario.id} className="comentario-item">
-              {comentario.usuario.idUsuario && (
+              {comentario.usuario?.idUsuario && (
                 <img
-                    src={`https://devocionales-app-backend.onrender.com/imagen/perfil/${user.idUsuario}`}
-                    alt="Foto de perfil"
-                    className="imagenComentario"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = defaultImage;
-                    }}
-                  />
+                  src={`https://localhost:8080/imagen/perfil/${comentario.usuario.idUsuario}`}
+                  alt="Foto de perfil"
+                  className="imagenComentario"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = defaultImage;
+                  }}
+                />
               )}
               <div className="comentario-texto">
                 <strong className="comentario-usuario">
@@ -215,8 +177,7 @@ export default function Comentarios({ devocionalId, usuarioId }) {
                 )}
               </div>
               {user &&
-                (user.idUsuario === comentario.idUsuario ||
-                  user.rol === "ADMINISTRADOR") && (
+                (user.idUsuario === comentario.usuario?.idUsuario || user.rol === "ADMINISTRADOR") && (
                   <div
                     className="comentario-menu-container"
                     ref={(el) => (menuRefs.current[comentario.id] = el)}
@@ -229,20 +190,18 @@ export default function Comentarios({ devocionalId, usuarioId }) {
                     </button>
                     {menuActivo === comentario.id && (
                       <div className="comentario-menu-dropdown">
-                        {user.idUsuario === comentario.idUsuario && (
+                        {user.idUsuario === comentario.usuario?.idUsuario && (
                           <button
                             onClick={() => {
                               handleEditarComentario(comentario);
-                              setMenuActivo(null); // Cierra el menú al hacer clic en Editar
+                              setMenuActivo(null);
                             }}
                           >
                             Editar
                           </button>
                         )}
                         <button
-                          onClick={() => {
-                            handleEliminarComentario(comentario.id);
-                          }}
+                          onClick={() => handleEliminarComentario(comentario.id)}
                         >
                           Eliminar
                         </button>

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { useNavigate } from 'react-router-dom';
 import imageDefault from '../Images/default-image-profile.jpg'
 import bannerDefault from "../Images/banner-default.png";
 
@@ -42,14 +43,14 @@ export default function RegistrarUsuario() {
       // Enviar solicitud POST al backend para registrar el usuario
       try {
         const response = await axios.post(
-          "https://devocionales-app-backend.onrender.com/usuario/registro",
+          "https://localhost:8080/usuario/registro",
           formData, // Usamos formData en lugar de un objeto plano
 
         );
         console.log("Se ha registrado con exito al usuario", response.data);
         if (response.status === 200) {
           // Redirigir a la página principal
-          window.location.href = '/login';
+          navigate('/login');
         }
       }
       catch (error) {
